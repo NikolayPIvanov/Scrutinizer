@@ -1,0 +1,1 @@
+{"version":3,"file":"BlockNumberEmitter.js","sourceRoot":"","sources":["../../src/BlockNumberEmitter.ts"],"names":[],"mappings":";;AAAA,mCAAsC;AAEtC,MAAM,kBAAmB,SAAQ,qBAAY;IACzC;QACI,KAAK,EAAE,CAAC;IACZ,CAAC;IAED,OAAO,CAAC,WAAmB;QACvB,IAAI,CAAC,IAAI,CAAC,WAAW,EAAE,WAAW,CAAC,CAAA;IACvC,CAAC;CACJ;AAED,MAAM,kBAAkB,GAAG,IAAI,kBAAkB,EAAE,CAAC;AAEpD,kBAAe,kBAAkB,CAAC"}
