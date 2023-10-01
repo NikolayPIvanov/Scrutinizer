@@ -7,6 +7,7 @@ class BlockNumberEmitter extends EventEmitter {
     }
 
     addToQueue(blockNumber: number) {
+        console.log(`Queuing ${blockNumber}`)
         this.emit(constants.events.newBlock, blockNumber)
     }
 }

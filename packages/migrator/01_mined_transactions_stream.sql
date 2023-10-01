@@ -78,7 +78,7 @@ CREATE TABLE block_number_latest AS
   GROUP BY la
   EMIT CHANGES;
 
-SELECT * FROM block_number_latest
+SELECT * FROM block_number_latest;
 
 CREATE TABLE blocks_main AS
   SELECT `number`,
