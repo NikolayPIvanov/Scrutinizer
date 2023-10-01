@@ -4,6 +4,11 @@ import { configuration } from "../configurations/Configurator";
 import { KafkaMessage } from "kafkajs";
 import { to } from "../utils";
 import { logger } from "../infrastructure";
+import { splitByBytes } from "../utils/splitByBytesSize";
+
+export type IMinimalProduceRecord = {
+    value: string
+};
 
 const rpcUrl = !!configuration.infura.projectId ?
     `${configuration.infura.baseUrl}${configuration.infura.projectId}`
@@ -35,33 +40,25 @@ const send = async (response: any) => {
         .filter((receipt: any) => !!receipt)
         .map((receipt: any) => ({
             value: JSON.stringify(receipt)
-        }));
+        } as IMinimalProduceRecord));
 
-    const chunkSize = 50;
-    const requests = [];
-    for (let i = 0; i < messages.length; i += chunkSize) {
-        const chunk = messages.slice(i, i + chunkSize);
-        requests.push({
-            topic: configuration.kafka.topics.receipts,
-            messages: chunk
-        })
-    }
+    const requests = splitByBytes<IMinimalProduceRecord>(messages)
+        .map(({ rows }) => ({ messages: rows, topic: configuration.kafka.topics.receipts, }));
 
-    await Promise.all(requests.map(r => producer.send(r)));
+    const [, err] = await to(Promise.all(requests.map(record => producer.send(record))));
+    if (err) logger.error(`Failed to send receipts`)
 }
 
 const process = async (messages: KafkaMessage[]) => {
     const requests = prepareRequests(messages);
     const [response, err] = await to(client.post("", requests));
     if (err) {
-        logger.error(err);
-
-        return;
+        throw err;
     }
 
     const [, error] = await to(send(response));
     if (error) {
-        logger.error(error);
+        throw error;
     }
 }
 

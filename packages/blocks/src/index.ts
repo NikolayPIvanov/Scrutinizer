@@ -16,6 +16,10 @@ import { indexMissingBlocksFrom } from './indexing';
 
     const lastProcessedBlockNumber = await getLastProcessedBlockNumber();
 
+    // TODO: Rework this to be with RPC calls on a given time period.
+    // If we get many blocks at once, the middle one may fail.
+    // The send to Kafka might fail as well, this will result in missed block.
+    // The fail may be something like too large message over 1MB.
     subscribeOnBlockEvent();
 
     await indexMissingBlocksFrom(lastProcessedBlockNumber);

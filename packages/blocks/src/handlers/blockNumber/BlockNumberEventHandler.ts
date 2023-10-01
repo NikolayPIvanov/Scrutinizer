@@ -2,12 +2,14 @@ import { IBlockJob, emitter } from "./BlockNumberEmitter";
 import { producer } from '../../messaging/Kafka';
 import { providers } from "../../providers";
 import { constants } from "../constants";
-import { Block } from "ethers";
+import { Block, TransactionResponse } from "ethers";
 import { configuration } from "../../configurations/Configurator";
 import { to } from "../../utils";
 import { logger } from "../../infrastructure";
+import { splitByBytes } from "../../utils/splitByBytesSize";
 
 const ACKNOWLEDGEMENTS = 1;
+const THRESHOLD_BLOCKS = 200;
 
 const rpcProvider = !!configuration.infura.projectId ? providers.rpc.infuraProvider : providers.rpc.fallbackJsonRpcProvider;
 
@@ -18,8 +20,17 @@ const getBlock = async (blockNumber: number) => {
     throw err;
 }
 
-const toTransactionMessages = (block: Block) =>
-    block?.prefetchedTransactions.map((transaction) => ({ value: JSON.stringify(transaction.toJSON()) }))
+const toTransactionMessages = (block: Block) => {
+    const splits = splitByBytes<TransactionResponse>(block?.prefetchedTransactions);
+    return splits.map((split) => {
+        const messages = split.rows.map(r => ({ value: JSON.stringify(r.toJSON()) }));
+
+        return {
+            messages,
+            topic: configuration.kafka.topics.transactions
+        }
+    })
+}
 
 const toBlockMessages = (block: Block) => {
     const { transactions, _type, ...baseBlock } = block.toJSON()
@@ -50,54 +61,67 @@ const addToCache = async (block: Block) => {
     blocksCache.set(block.number, block);
 }
 
-const THRESHOLD_BLOCKS = 200;
 const evictCache = (block: Block) => {
     blocksCache.delete(block.number - THRESHOLD_BLOCKS);
 }
 
-const handle = async (job: IBlockJob) => {
+const sendBlockForRetry = async (job: IBlockJob) => {
     const { blockNumber, retries, callback } = job;
-    const [block, err] = await to(getBlock(blockNumber));
-    if (err || !block) {
-        await producer.sendBatch({
-            acks: ACKNOWLEDGEMENTS,
-            topicMessages: [
-                {
-                    topic: configuration.kafka.topics.blocksNumberRetry,
-                    messages: [{
-                        value: JSON.stringify({ blockNumber, retries })
-                    }]
-                }
-            ]
-        });
 
-        if (callback) callback();
+    const [, error] = await to(producer.sendBatch({
+        acks: ACKNOWLEDGEMENTS,
+        topicMessages: [
+            {
+                topic: configuration.kafka.topics.blocksNumberRetry,
+                messages: [{
+                    value: JSON.stringify({ blockNumber, retries })
+                }]
+            }
+        ]
+    }));
+
+    if (error) {
+        logger.error("Failed to send block for retry!");
+
+        throw error;
+    }
+
+    if (callback) callback();
+}
+
+const handle = async (job: IBlockJob) => {
+    const { blockNumber, callback } = job;
+    const [block, error] = await to(getBlock(blockNumber));
+    if (error || !block) return sendBlockForRetry(job);
+
+    if (!block?.prefetchedTransactions) {
+        if (callback) {
+            callback();
+        }
 
         return;
     }
 
-    if (!block?.prefetchedTransactions) {
-        if (callback) callback();
-    }
+    const transactionTopicMessagesSet = toTransactionMessages(block);
 
-    await producer.sendBatch({
+    const [, err] = await to(producer.sendBatch({
         acks: ACKNOWLEDGEMENTS,
         topicMessages: [
-            {
-                topic: configuration.kafka.topics.transactions,
-                messages: toTransactionMessages(block)
-            },
+            ...transactionTopicMessagesSet,
             {
                 topic: configuration.kafka.topics.blocks,
                 messages: [toBlockMessages(block)]
             }
         ]
-    });
+    }));
 
-    addToCache(block);
+    await addToCache(block);
     evictCache(block);
 
-    if (callback) callback();
+    if (err) {
+        await sendBlockForRetry(job);
+    }
+
 }
 
 export function bootstrap() {

@@ -3,7 +3,7 @@ import joi = require("joi");
 const loggingSchema = joi
     .object()
     .keys({
-        level: joi.string().valid("debug", "trace", "info").optional()
+        level: joi.string().valid("debug", "trace", "info", "warn", "error").optional()
     });
 
 const topicsSchema = joi.object().keys({
