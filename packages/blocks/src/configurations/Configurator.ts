@@ -8,6 +8,7 @@ export const configuration = {
         brokers: process.env.KAFKA_BROKERS?.split(",") || [],
         topics: {
             blocks: process.env.BLOCKS_TOPIC!,
+            duplicateBlocks: process.env.DUPLICATE_BLOCKS_TOPIC!,
             blocksNumberRetry: process.env.BLOCKS_NUMBER_RETRY!,
             transactions: process.env.TRANSACTIONS_TOPIC!,
             receipts: process.env.RECEIPTS_TOPIC!,

@@ -28,12 +28,36 @@ const toBlockMessages = (block: Block) => {
     };
 }
 
+const blocksCache = new Map<number, Block>();
+
+const addToCache = async (block: Block) => {
+    const cachedBlock = blocksCache.get(block.number);
+    if (cachedBlock) {
+        console.log(`Duplicate for ${block.number}, old was ${cachedBlock.hash}, now is ${block.hash}`);
+
+        await producer.sendBatch({
+            acks: ACKNOWLEDGEMENTS,
+            topicMessages: [
+                {
+                    topic: configuration.kafka.topics.duplicateBlocks,
+                    messages: [toBlockMessages(cachedBlock)]
+                }
+            ]
+        });
+    }
+
+    blocksCache.set(block.number, block);
+}
+
+const THRESHOLD_BLOCKS = 200;
+const evictCache = (block: Block) => {
+    blocksCache.delete(block.number - THRESHOLD_BLOCKS);
+}
+
 const handle = async (job: IBlockJob) => {
     const { blockNumber, retries, callback } = job;
     const [block, err] = await to(getBlock(blockNumber));
     if (err || !block) {
-        console.log(`Block ${blockNumber} was not found`, err);
-
         await producer.sendBatch({
             acks: ACKNOWLEDGEMENTS,
             topicMessages: [
@@ -68,6 +92,9 @@ const handle = async (job: IBlockJob) => {
             }
         ]
     });
+
+    addToCache(block);
+    evictCache(block);
 
     if (callback) callback();
 }
