@@ -7,19 +7,8 @@ import { bootstrap as bootstrapBlocksRetryConsumer } from "./messaging/BlocksRet
 import { bootstrap as bootstrapKsqldb } from './ksql/KsqldbClient';
 import { providers } from './providers';
 import { getLastProcessedBlockNumber } from './ksql/Queries';
+import { catchupBlocks } from "./bootstrap/catchup-blocks";
 
-const catchupBlocks = async (lastProcessedNumber: number) => {
-    if (!lastProcessedNumber) {
-        return;
-    }
-
-    const rpcProvider = !!configuration.infura.projectId ? providers.rpc.infuraProvider : providers.rpc.fallbackJsonRpcProvider;
-    const latestBlockNumber = await rpcProvider.getBlockNumber();
-
-    for (let index = lastProcessedNumber + 1; index <= latestBlockNumber; index++) {
-        emitter.addToQueue({ blockNumber: index })
-    }
-}
 
 (async () => {
     await Promise.all([bootstrapKsqldb(), bootstrapKafka()]);
@@ -61,5 +50,3 @@ const catchupBlocks = async (lastProcessedNumber: number) => {
 
     await catchupBlocks(lastProcessedNumber);
 })();
-
-

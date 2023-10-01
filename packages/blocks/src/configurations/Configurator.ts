@@ -1,8 +1,14 @@
 import * as dotenv from 'dotenv';
+import joi = require("joi");
+import { configurationSchema } from "./configuration.validation";
 
 dotenv.config();
 
+
 export const configuration = {
+    logging: {
+        level: process.env.LOG_LEVEL
+    },
     kafka: {
         clientId: process.env.KAFKA_CLIENT_ID,
         brokers: process.env.KAFKA_BROKERS?.split(",") || [],
@@ -15,13 +21,12 @@ export const configuration = {
         },
         groups: {
             transactions: process.env.TRANSACTIONS_GROUP!,
-            blocks: process.env.BLOCKS_GROUP!,
             blockNumberRetry: process.env.BLOCKS_NUMBER_RETRY_GROUP!
         }
     },
     infura: {
         projectId: process.env.INFURA_KEY,
-        baseUrl: process.env.BASE_INFURA_URL || "https://mainnet.infura.io/v3/"
+        baseUrl: process.env.BASE_INFURA_URL
     },
     fallback: {
         url: process.env.FALLBACK_RPC_URL,
@@ -32,16 +37,7 @@ export const configuration = {
     }
 }
 
-if (!configuration.network.chainId) {
-    throw "Missing chain id"
+const validationResult = configurationSchema.validate(configuration);
+if (validationResult.error) {
+    throw validationResult.error.message;
 }
-
-if (!configuration.kafka.brokers?.length) {
-    throw "Missing Kafka Brokers"
-}
-
-if (!configuration.kafka.clientId) {
-    throw "Missing Kafka Client ID"
-}
-
-
