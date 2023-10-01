@@ -1,39 +1,42 @@
+import { configuration } from './configurations/Configurator';
 import { emitter } from './handlers/blockNumber/BlockNumberEmitter';
 import { bootstrap as bootstrapBlockNumberEventHandler } from './handlers/blockNumber/BlockNumberEventHandler';
 import { bootstrap as bootstrapKafka } from './messaging/Kafka';
 import { bootstrap as bootstrapTransactionConsumer } from "./messaging/TransactionConsumer";
+import { bootstrap as bootstrapBlocksRetryConsumer } from "./messaging/BlocksRetryConsumer";
+import { bootstrap as bootstrapKsqldb } from './ksql/KsqldbClient';
 import { providers } from './providers';
+import { getLastProcessedBlockNumber } from './ksql/Queries';
 
-const KsqldbClient = require("ksqldb-client");
+const catchupBlocks = async (lastProcessedNumber: number) => {
+    if (!lastProcessedNumber) {
+        return;
+    }
 
-const client = new KsqldbClient({
-    host: "http://localhost",
-    port: 8088,
-});
+    const rpcProvider = !!configuration.infura.projectId ? providers.rpc.infuraProvider : providers.rpc.fallbackJsonRpcProvider;
+    const latestBlockNumber = await rpcProvider.getBlockNumber();
+
+    for (let index = lastProcessedNumber + 1; index <= latestBlockNumber; index++) {
+        emitter.addToQueue({ blockNumber: index })
+    }
+}
 
 (async () => {
-    await client.connect();
-
-
-    const { data } = await client.query("SELECT * FROM block_number_latest;");
-    const { rows } = data;
-    const lastProcessed = rows[0].number;
-
-    await bootstrapKafka();
-    await bootstrapTransactionConsumer();
+    await Promise.all([bootstrapKsqldb(), bootstrapKafka()]);
+    await Promise.all([bootstrapTransactionConsumer(), bootstrapBlocksRetryConsumer()]);
 
     bootstrapBlockNumberEventHandler();
 
-    await providers.wss.infuraWebSocketProvider.on(
-        'block', (blockNumber: number) => emitter.addToQueue(blockNumber));
+    const lastProcessedNumber = await getLastProcessedBlockNumber();
 
-    const latestChain = await providers.rpc.infuraProvider.getBlockNumber();
+    const wssProvider = !!configuration.infura.projectId ?
+        providers.wss.infuraWebSocketProvider :
+        providers.wss.fallbackWebSocketProvider;
+    if (!wssProvider) throw "No WSS Provider configured";
 
-    console.log(lastProcessed, latestChain, latestChain - lastProcessed)
+    await wssProvider.on('block', (blockNumber: number) => emitter.addToQueue({ blockNumber }));
 
-    for (let index = lastProcessed + 1; index <= latestChain; index++) {
-        emitter.addToQueue(index)
-    }
+    await catchupBlocks(lastProcessedNumber);
 })();
 
 

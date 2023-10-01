@@ -16,7 +16,6 @@ CREATE STREAM mined_transactions (
     value_format='json',
     partitions=3);
 
-
 CREATE TABLE transaction_latest AS
   SELECT hash,
          LATEST_BY_OFFSET(blockNumber) AS blockNumber,
@@ -33,23 +32,6 @@ CREATE TABLE transaction_latest AS
   GROUP BY hash
   EMIT CHANGES;
 
-SELECT * FROM transaction_latest;
-
-/*
-{
-	"baseFeePerGas": "6990681193",
-	"difficulty": "0",
-	"extraData": "0x546974616e2028746974616e6275696c6465722e78797a29",
-	"gasLimit": "30000000",
-	"gasUsed": "10006210",
-	"hash": "0x520566e4c4560b8da97de0015e934987cb261fbbff4369b76e5e385c30b056e4",
-	"miner": "0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97",
-	"nonce": "0x0000000000000000",
-	"number": 18253970,
-	"parentHash": "0xb03114af51cb73f5d2ff6a254ba7eb4417a18ab0d709b0723590404234c7c637",
-	"timestamp": 1696142555
-}
-*/
 CREATE STREAM blocks (
   baseFeePerGas varchar,
   difficulty varchar,
@@ -68,13 +50,13 @@ CREATE STREAM blocks (
     value_format='json',
     partitions=3);
 
-CREATE STREAM derived AS
+CREATE STREAM latest_processed AS
   SELECT `number`, 'latest' AS la FROM blocks EMIT CHANGES;
 
 CREATE TABLE block_number_latest AS
   SELECT la,
          LATEST_BY_OFFSET(`number`) AS `number`
-  FROM derived
+  FROM latest_processed
   GROUP BY la
   EMIT CHANGES;
 
@@ -90,3 +72,10 @@ CREATE TABLE blocks_main AS
   EMIT CHANGES;
 
 SELECT *, 'status' as sta FROM blocks_main;
+
+DROP IF EXISTS TABLE TRANSACTION_LATEST;
+DROP IF EXISTS TABLE BLOCK_NUMBER_LATEST;
+DROP IF EXISTS STREAM LATEST_PROCESSED;
+DROP IF EXISTS STREAM MINED_TRANSACTIONS;
+DROP IF EXISTS STREAM KSQL_PROCESSING_LOG;
+DROP IF EXISTS STREAM BLOCKS;

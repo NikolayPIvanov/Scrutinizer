@@ -1,4 +1,4 @@
-import { emitter } from "./BlockNumberEmitter";
+import { IBlockJob, emitter } from "./BlockNumberEmitter";
 import { producer } from '../../messaging/Kafka';
 import { providers } from "../../providers";
 import { constants } from "../constants";
@@ -8,13 +8,10 @@ import { to } from "../../utils";
 
 const ACKNOWLEDGEMENTS = 1;
 
+const rpcProvider = !!configuration.infura.projectId ? providers.rpc.infuraProvider : providers.rpc.fallbackJsonRpcProvider;
+
 const getBlock = async (blockNumber: number) => {
-    let [block, err] = await to(providers.rpc.infuraProvider.getBlock(blockNumber, true))
-    if (block) return block;
-
-    console.log(err);
-
-    [block, err] = await to(providers.rpc.fallbackJsonRpcProvider.getBlock(blockNumber, true))
+    let [block, err] = await to(rpcProvider.getBlock(blockNumber, true))
     if (block) return block;
 
     throw err;
@@ -31,14 +28,32 @@ const toBlockMessages = (block: Block) => {
     };
 }
 
-const handle = async (blockNumber: number) => {
+const handle = async (job: IBlockJob) => {
+    const { blockNumber, retries, callback } = job;
     const [block, err] = await to(getBlock(blockNumber));
     if (err || !block) {
-        console.log(err);
+        console.log(`Block ${blockNumber} was not found`, err);
+
+        await producer.sendBatch({
+            acks: ACKNOWLEDGEMENTS,
+            topicMessages: [
+                {
+                    topic: configuration.kafka.topics.blocksNumberRetry,
+                    messages: [{
+                        value: JSON.stringify({ blockNumber, retries })
+                    }]
+                }
+            ]
+        });
+
+        if (callback) callback();
+
         return;
     }
 
-    if (!block?.prefetchedTransactions) return;
+    if (!block?.prefetchedTransactions) {
+        if (callback) callback();
+    }
 
     await producer.sendBatch({
         acks: ACKNOWLEDGEMENTS,
@@ -53,8 +68,11 @@ const handle = async (blockNumber: number) => {
             }
         ]
     });
+
+    if (callback) callback();
 }
 
 export function bootstrap() {
-    emitter.on(constants.events.newBlock, async (blockNumber: number) => handle(blockNumber))
+    emitter.on(constants.events.newBlock,
+        async ({ blockNumber, retries = 0, callback }: IBlockJob) => handle({ blockNumber, retries, callback }))
 }

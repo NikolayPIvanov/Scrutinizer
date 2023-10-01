@@ -8,14 +8,14 @@ export const configuration = {
         brokers: process.env.KAFKA_BROKERS?.split(",") || [],
         topics: {
             blocks: process.env.BLOCKS_TOPIC!,
-            blocksLatest: process.env.LATEST_BLOCKS_TOPIC!,
+            blocksNumberRetry: process.env.BLOCKS_NUMBER_RETRY!,
             transactions: process.env.TRANSACTIONS_TOPIC!,
             receipts: process.env.RECEIPTS_TOPIC!,
         },
         groups: {
             transactions: process.env.TRANSACTIONS_GROUP!,
             blocks: process.env.BLOCKS_GROUP!,
-            blocksLatest: process.env.BLOCKS_LATEST_GROUP!
+            blockNumberRetry: process.env.BLOCKS_NUMBER_RETRY_GROUP!
         }
     },
     infura: {
