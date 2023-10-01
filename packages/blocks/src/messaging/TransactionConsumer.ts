@@ -2,6 +2,7 @@ import { kafka, producer } from "./Kafka";
 import axios from "axios";
 import { configuration } from "../configurations/Configurator";
 import { KafkaMessage } from "kafkajs";
+import { to } from "../utils";
 
 const client = axios.create({
     baseURL: `${configuration.infura.baseUrl}${configuration.infura.projectId}`,
@@ -41,7 +42,7 @@ const send = async (response: any) => {
 
 const process = async (messages: KafkaMessage[]) => {
     const requests = prepareRequests(messages);
-    const [response, err] = await to(client.post("/", requests));
+    const [response, err] = await to(client.post("", requests));
     if (err) {
         console.log(err);
 

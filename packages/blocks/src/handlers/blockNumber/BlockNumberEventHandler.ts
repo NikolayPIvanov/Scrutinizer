@@ -4,6 +4,7 @@ import { providers } from "../../providers";
 import { constants } from "../constants";
 import { Block } from "ethers";
 import { configuration } from "../../configurations/Configurator";
+import { to } from "../../utils";
 
 const ACKNOWLEDGEMENTS = 1;
 
@@ -23,14 +24,16 @@ const toTransactionMessages = (block: Block) =>
     block?.prefetchedTransactions.map((transaction) => ({ value: JSON.stringify(transaction.toJSON()) }))
 
 const toBlockMessages = (block: Block) => {
-    const { transactions, ...baseBlock } = block.toJSON()
+    const { transactions, _type, ...baseBlock } = block.toJSON()
 
-    return baseBlock;
+    return {
+        value: JSON.stringify(baseBlock)
+    };
 }
 
 const handle = async (blockNumber: number) => {
     const [block, err] = await to(getBlock(blockNumber));
-    if (err) {
+    if (err || !block) {
         console.log(err);
         return;
     }
