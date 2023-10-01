@@ -1,20 +1,18 @@
+import { emitter } from './handlers/blockNumber/BlockNumberEmitter';
+import { bootstrap as bootstrapBlockNumberEventHandler } from './handlers/blockNumber/BlockNumberEventHandler';
+import { bootstrap as bootstrapKafka } from './messaging/Kafka';
+import { bootstrap as bootstrapTransactionConsumer } from "./messaging/TransactionConsumer";
+import { providers } from './providers';
 
-import { InfuraWebSocketProvider, Network } from 'ethers';
-import { configuration } from './Configurator'
-import blockNumberEmitter from './BlockNumberEmitter';
-import { listener } from './BlockProcessor';
-import { initialize } from './Kafka';
-import { initialize as consumerInit } from "./TransactionConsumer";
-
-listener();
 
 (async () => {
-    await initialize();
-    await consumerInit();
+    await bootstrapKafka();
+    await bootstrapTransactionConsumer();
 
-    const provider = new InfuraWebSocketProvider(Network.from(configuration.network.chainId), configuration.infura.projectId);
+    bootstrapBlockNumberEventHandler();
 
-    await provider.on('block', (blockNumber) => blockNumberEmitter.process(blockNumber))
+    await providers.wss.infuraWebSocketProvider.on(
+        'block', (blockNumber: number) => emitter.addToQueue(blockNumber))
 })();
 
 
