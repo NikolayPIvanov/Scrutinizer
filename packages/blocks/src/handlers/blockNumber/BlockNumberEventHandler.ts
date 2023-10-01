@@ -5,6 +5,7 @@ import { constants } from "../constants";
 import { Block } from "ethers";
 import { configuration } from "../../configurations/Configurator";
 import { to } from "../../utils";
+import { logger } from "../../infrastructure";
 
 const ACKNOWLEDGEMENTS = 1;
 
@@ -33,7 +34,7 @@ const blocksCache = new Map<number, Block>();
 const addToCache = async (block: Block) => {
     const cachedBlock = blocksCache.get(block.number);
     if (cachedBlock) {
-        console.log(`Duplicate for ${block.number}, old was ${cachedBlock.hash}, now is ${block.hash}`);
+        logger.warn(`Duplicate for ${block.number}, old was ${cachedBlock.hash}, now is ${block.hash}`);
 
         await producer.sendBatch({
             acks: ACKNOWLEDGEMENTS,

@@ -1,9 +1,7 @@
 import * as dotenv from 'dotenv';
-import joi = require("joi");
 import { configurationSchema } from "./configuration.validation";
 
 dotenv.config();
-
 
 export const configuration = {
     logging: {

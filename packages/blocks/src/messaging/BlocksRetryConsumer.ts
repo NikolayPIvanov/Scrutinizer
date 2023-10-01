@@ -2,6 +2,7 @@ import { kafka } from "./Kafka";
 import { configuration } from "../configurations/Configurator";
 import { KafkaMessage } from "kafkajs";
 import { IBlockJob, emitter } from "../handlers/blockNumber/BlockNumberEmitter";
+import { logger } from "../infrastructure";
 
 const DEFAULT_HEARTBEAT_INTERVAL = 2500;
 const RETRIES_THRESHOLD = 3;
@@ -10,7 +11,7 @@ const DELAY_PER_RETRY = 300;
 const process = async ({ message, heartbeat }: { message: KafkaMessage, heartbeat: () => Promise<void> }) => {
     const { blockNumber, retries } = JSON.parse(message.value!.toString()) as IBlockJob
     if (retries! > RETRIES_THRESHOLD) {
-        console.log(`Tried ${blockNumber} ${retries} times and still failed, marking as errored.`);
+        logger.error(`Tried ${blockNumber} ${retries} times and still failed, marking as errored.`);
         return;
     }
 

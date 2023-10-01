@@ -1,5 +1,6 @@
 import { EventEmitter } from "events";
 import { constants } from "../constants";
+import { logger } from "../../infrastructure";
 
 export interface IBlockJob {
     blockNumber: number,
@@ -13,7 +14,7 @@ class BlockNumberEmitter extends EventEmitter {
     }
 
     addToQueue(job: IBlockJob) {
-        console.log(`Queuing block ${job.blockNumber}`);
+        logger.info(`Queuing block ${job.blockNumber}`);
         this.emit(constants.events.newBlock, job)
     }
 }

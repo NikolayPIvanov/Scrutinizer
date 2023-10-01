@@ -3,6 +3,7 @@ import axios from "axios";
 import { configuration } from "../configurations/Configurator";
 import { KafkaMessage } from "kafkajs";
 import { to } from "../utils";
+import { logger } from "../infrastructure";
 
 const rpcUrl = !!configuration.infura.projectId ?
     `${configuration.infura.baseUrl}${configuration.infura.projectId}`
@@ -53,14 +54,14 @@ const process = async (messages: KafkaMessage[]) => {
     const requests = prepareRequests(messages);
     const [response, err] = await to(client.post("", requests));
     if (err) {
-        console.log(err);
+        logger.error(err);
 
         return;
     }
 
     const [, error] = await to(send(response));
     if (error) {
-        console.log(error);
+        logger.error(error);
     }
 }
 
@@ -80,7 +81,7 @@ export const bootstrap = async () => {
 
             const [, error] = await to(process(batch.messages));
             if (error) {
-                console.log(error);
+                logger.error(error);
                 return;
             }
 

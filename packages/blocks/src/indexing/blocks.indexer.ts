@@ -2,7 +2,7 @@ import { configuration } from "../configurations/Configurator";
 import { emitter } from "../handlers/blockNumber/BlockNumberEmitter";
 import { providers } from "../providers";
 
-export const catchupBlocks = async (lastProcessedNumber: number) => {
+export const indexMissingBlocksFrom = async (lastProcessedNumber: number) => {
     if (!lastProcessedNumber) {
         return;
     }

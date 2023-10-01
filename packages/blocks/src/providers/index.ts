@@ -5,7 +5,6 @@ const network = Network.from(configuration.network.chainId);
 const projectId = configuration.infura.projectId;
 
 const infuraProvider = new InfuraProvider(network, projectId);
-
 const fallbackJsonRpcProvider = new JsonRpcProvider(configuration.fallback.url, network);
 
 export const providers = {
