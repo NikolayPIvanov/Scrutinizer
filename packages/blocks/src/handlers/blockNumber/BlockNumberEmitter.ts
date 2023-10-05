@@ -1,22 +1,14 @@
 import { EventEmitter } from "events";
 import { constants } from "../constants";
-import { logger } from "../../infrastructure";
+import { IBlockJob, IBlockNumberEmitter, IEmitter, TYPES } from "../../types";
+import { inject, injectable } from "inversify";
 
-export interface IBlockJob {
-    blockNumber: number,
-    retries?: number | undefined,
-    callback?: () => void
-}
-
-class BlockNumberEmitter extends EventEmitter {
-    constructor() {
-        super();
+@injectable()
+export class BlockNumberEmitter implements IBlockNumberEmitter {
+    constructor(@inject(TYPES.IEmitter) private emitter: IEmitter) {
     }
 
     addToQueue(job: IBlockJob) {
-        logger.info(`Queuing block ${job.blockNumber}`);
-        this.emit(constants.events.newBlock, job)
+        this.emitter.instance.emit(constants.events.newBlock, job);
     }
 }
-
-export const emitter = new BlockNumberEmitter();

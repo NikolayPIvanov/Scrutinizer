@@ -62,6 +62,8 @@ CREATE TABLE block_number_latest AS
 
 SELECT * FROM block_number_latest;
 
+INSERT INTO latest_processed (la,  `number`) VALUES ('latest', 136530202);
+
 CREATE TABLE blocks_main AS
   SELECT `number`,
          LATEST_BY_OFFSET(parentHash) AS parentHash,

@@ -1,42 +1,41 @@
-import { configuration } from "../configurations/Configurator";
-import { emitter } from "../handlers/blockNumber/BlockNumberEmitter";
-import { providers } from "../providers";
+import { inject, injectable } from "inversify";
+import { IConfiguration, IWebSocketService, WebSocketProvider, TYPES, IBlockNumberEmitter } from "../types";
 
-let received: number | undefined;
+@injectable()
+export class WebSocketService implements IWebSocketService {
+    private wss: WebSocketProvider;
+    private received: number | undefined;
 
-const createProvider = () => {
-    const wssProviderFactory = !!configuration.infura.projectId ?
-        providers.wss.infuraWebSocketProviderFactory :
-        providers.wss.fallbackWebSocketProviderFactory;
-
-    if (!wssProviderFactory) throw "No WSS Provider configured!";
-
-    const provider = wssProviderFactory();
-    if (!provider) throw "Could not create WSS Provider!";
-
-    return provider;
-}
-
-export const websocket = {
-    provider: createProvider()
-}
-
-export const subscribeOnBlockEvent = () => websocket.provider.on('block', (blockNumber: number) => {
-    received = Date.now();
-    emitter.addToQueue({ blockNumber });
-})
-
-setInterval(async () => {
-    if (!received) return;
-
-    const timeSinceLastEvent = Date.now() - received;
-
-    // If we have not received anything for 1 minute, 
-    // either chain has stopped or provider has cut us off.
-    // This is why we can force recreate.
-    if (timeSinceLastEvent > 20000) {
-        await websocket.provider.destroy();
-        websocket.provider = createProvider();
-        await subscribeOnBlockEvent();
+    constructor(
+        @inject(TYPES.IConfiguration) private configuration: IConfiguration,
+        @inject(TYPES.IBlockNumberEmitter) private emitter: IBlockNumberEmitter) {
+        this.wss = this.createProvider();
+        this.autoReconnect();
     }
-}, 5000);
+
+    public subscribeOnBlockEvent = () => this.wss.on('block', (blockNumber: number) => {
+        this.received = Date.now();
+        // this.emitter.addToQueue({ blockNumber });
+    })
+
+    private createProvider = (): WebSocketProvider => {
+        return new WebSocketProvider(this.configuration.fallback.wss!, this.configuration.network.chainId)
+    }
+
+    private autoReconnect = (interval = 5000, staleTime = 20000) => {
+        setInterval(async () => {
+            if (!this.received) return;
+
+            const timeSinceLastEvent = Date.now() - this.received;
+
+            // If we have not received anything for 1 minute, 
+            // either chain has stopped or provider has cut us off.
+            // This is why we can force recreate.
+            if (timeSinceLastEvent > staleTime) {
+                await this.wss.destroy();
+                this.wss = this.createProvider();
+                await this.subscribeOnBlockEvent();
+            }
+        }, interval)
+    }
+}

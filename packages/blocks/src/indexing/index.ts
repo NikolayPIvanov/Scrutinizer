@@ -1,3 +1,3 @@
-import { indexMissingBlocksFrom } from "./blocks.indexer";
+// import { indexMissingBlocksFrom } from "./blocks.indexer";
 
-export { indexMissingBlocksFrom }
+// export { indexMissingBlocksFrom }

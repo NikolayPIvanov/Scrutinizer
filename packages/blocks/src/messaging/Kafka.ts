@@ -1,19 +1,27 @@
-import { Kafka } from 'kafkajs';
-import { configuration } from '../configurations/Configurator';
+import { inject, injectable } from 'inversify';
+import { Admin, Kafka, Producer } from 'kafkajs';
+import { TYPES, IConfiguration, IKafkaClient } from '../types';
 
-export const kafka = new Kafka({
-    clientId: configuration.kafka.clientId,
-    brokers: configuration.kafka.brokers,
-});
+@injectable()
+export class KafkaClient implements IKafkaClient {
+    private readonly kafka: Kafka;
+    private readonly admin: Admin;
+    public readonly producer: Producer;
 
-export const admin = kafka.admin()
+    constructor(
+        @inject(TYPES.IConfiguration) private configuration: IConfiguration
+    ) {
+        this.kafka = new Kafka({
+            clientId: this.configuration.kafka.clientId,
+            brokers: this.configuration.kafka.brokers,
+        })
 
-export const producer = kafka.producer()
+        this.admin = this.kafka.admin();
+        this.producer = this.kafka.producer();
+    }
 
-export const bootstrap = async () => {
-    await producer.connect();
-}
-
-export const bootstrapAdmin = async () => {
-    await admin.connect()
+    public bootstrap = async () => {
+        await this.producer.connect();
+        await this.admin.connect()
+    }
 }

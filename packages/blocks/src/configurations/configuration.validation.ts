@@ -1,12 +1,13 @@
 import joi = require("joi");
+import { IConfiguration, IFallbackConfiguration, IGroupConfiguration, IInfuraConfiguration, IKafkaConfiguration, ILoggingConfiguration, INetworkConfiguration, ITopicsConfiguration } from "../types";
 
 const loggingSchema = joi
-    .object()
+    .object<ILoggingConfiguration>()
     .keys({
         level: joi.string().valid("debug", "trace", "info", "warn", "error").optional()
     });
 
-const topicsSchema = joi.object().keys({
+const topicsSchema = joi.object<ITopicsConfiguration>().keys({
     blocks: joi.string().required(),
     duplicateBlocks: joi.string().required(),
     blocksNumberRetry: joi.string().required(),
@@ -14,13 +15,13 @@ const topicsSchema = joi.object().keys({
     receipts: joi.string().required(),
 });
 
-const groupsSchema = joi.object().keys({
+const groupsSchema = joi.object<IGroupConfiguration>().keys({
     transactions: joi.string().required(),
     blockNumberRetry: joi.string().required(),
 });
 
 const kafkaSchema = joi
-    .object()
+    .object<IKafkaConfiguration>()
     .keys({
         clientId: joi.string().required(),
         brokers: joi.array().required().min(1),
@@ -29,27 +30,27 @@ const kafkaSchema = joi
     });
 
 const infuraSchema = joi
-    .object()
+    .object<IInfuraConfiguration>()
     .keys({
         projectId: joi.string().optional(),
         baseUrl: joi.string().optional(),
     })
 
 const fallbackSchema = joi
-    .object()
+    .object<IFallbackConfiguration>()
     .keys({
         url: joi.string().optional(),
         wss: joi.string().optional(),
     })
 
 const networkSchema = joi
-    .object()
+    .object<INetworkConfiguration>()
     .keys({
         chainId: joi.number().required().min(1),
     })
 
 export const configurationSchema = joi
-    .object()
+    .object<IConfiguration>()
     .keys({
         logging: loggingSchema,
         kafka: kafkaSchema,
