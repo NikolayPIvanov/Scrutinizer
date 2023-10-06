@@ -1,12 +1,16 @@
 import 'reflect-metadata';
 
 import {ContainerInstance} from './Container';
+import {IProviderConfigurationMerger} from './provider/provider.interfaces';
 import {TYPES} from './types';
 
 (async () => {
   const container = new ContainerInstance();
 
-  const configuration = container.get(TYPES.IConfiguration);
+  const providerConfigurationMerger =
+    container.get<IProviderConfigurationMerger>(
+      TYPES.IProviderConfigurationMerger
+    );
 
-  console.log(configuration);
+  console.log(await providerConfigurationMerger.mergeConfigurations());
 })();

@@ -1,7 +1,7 @@
-import {inject} from 'inversify';
+import {inject, injectable} from 'inversify';
 import {IConfiguration} from '../configuration';
 import {TYPES} from '../types';
-import {IProviderConfigurationMerger} from './provider.interaces';
+import {IProviderConfigurationMerger} from './provider.interfaces';
 import {
   IChainIdNamePair,
   IChainRpcUrlPair,
@@ -11,6 +11,7 @@ import {
   ITransformedExtendedRpcInstance,
 } from './scrapers/scraper.interfaces';
 
+@injectable()
 export class ProviderConfigurationMerger
   implements IProviderConfigurationMerger
 {
@@ -23,7 +24,9 @@ export class ProviderConfigurationMerger
     private configuration: IConfiguration
   ) {}
 
-  public mergeConfigurations = async () => {
+  public mergeConfigurations = async (): Promise<
+    ITransformedExtendedRpcInstance[]
+  > => {
     const {chainIdsList, rpcUrlsList} = await this.fetchConfigurations();
 
     const extendedChainRpcUrlPair = this.prepareExtendedChainRpcUrlPair(
@@ -65,7 +68,7 @@ export class ProviderConfigurationMerger
 
   private prepareTransformedExtendedChainRpcUrlPair = (
     extendedChainRpcUrlPair: IExtendedChainRpcUrlPair
-  ) =>
+  ): ITransformedExtendedRpcInstance[] =>
     Object.values(extendedChainRpcUrlPair)
       .map(row => ({
         ...row,

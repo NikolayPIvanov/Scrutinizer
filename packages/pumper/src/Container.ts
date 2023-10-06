@@ -8,7 +8,7 @@ import {
 
 import {ILogger, Logger} from './logger';
 import {ProviderConfigurationMerger} from './provider/ProviderConfigurationMerger';
-import {IProviderConfigurationMerger} from './provider/provider.interaces';
+import {IProviderConfigurationMerger} from './provider/provider.interfaces';
 import {ChainIdScrapper} from './provider/scrapers/ChainIdScrapper';
 import {ChainRpcScrapper} from './provider/scrapers/ChainRpcScrapper';
 import {

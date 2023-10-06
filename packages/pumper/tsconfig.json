@@ -18,5 +18,7 @@
   "include": [
     "src/**/*.ts",
     "test/**/*.ts"
-  ]
+,
+"src/provider/provider.interfaces.ts"
+]
 }
