@@ -6,6 +6,7 @@ import {
   IConfigurationValidationSchema,
 } from './configuration';
 
+import {ILogger, Logger} from './logger';
 import {ProviderConfigurationMerger} from './provider/ProviderConfigurationMerger';
 import {IProviderConfigurationMerger} from './provider/provider.interaces';
 import {ChainIdScrapper} from './provider/scrapers/ChainIdScrapper';
@@ -46,5 +47,7 @@ export class ContainerInstance extends Container {
     this.bind<IProviderConfigurationMerger>(TYPES.IProviderConfigurationMerger)
       .to(ProviderConfigurationMerger)
       .inSingletonScope();
+
+    this.bind<ILogger>(TYPES.ILogger).to(Logger).inSingletonScope();
   }
 }
