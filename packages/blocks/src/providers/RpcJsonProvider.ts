@@ -171,9 +171,12 @@ export class RpcJsonProvider implements IProvider {
             this.refreshProviders();
         }
 
-        this.emitter.addToQueue({
-            block: blockFull,
-        });
+        if (blockFull.number) {
+            this.emitter.addToQueue({
+                block: blockFull,
+            });
+        }
+
 
         if (blockFull.blockNumber > this.latestBlock) {
             this.latestBlock = blockFull.blockNumber;
@@ -198,23 +201,23 @@ export class RpcJsonProvider implements IProvider {
 
             const validated = success
                 .filter(
-                    (e) => e?.number && e?.timestamp && e?.transactions && e?.txLogs
+                    (e) => !!e?.number && !!e?.timestamp && !!e?.transactions && !!e?.txLogs
                 )
                 .sort((a, b) => b.txLogs?.length - a.txLogs?.length);
 
             const bestBlock = validated.find(
                 (block) =>
-                    block?.number &&
-                    block?.timestamp &&
+                    !!block?.number &&
+                    !!block?.timestamp &&
                     block?.transactions?.length > 0 &&
                     block?.txLogs?.length > 0
             );
 
-            if (bestBlock) {
+            if (bestBlock?.number) {
                 return bestBlock;
             }
 
-            if (validated[0]) {
+            if (validated[0]?.number) {
                 return validated[0];
             }
         } catch (error) {

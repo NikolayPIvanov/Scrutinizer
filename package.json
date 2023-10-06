@@ -16,5 +16,12 @@
   "license": "ISC",
   "devDependencies": {
     "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "inversify": "^6.0.1",
+    "joi": "^17.11.0",
+    "kafkajs": "^2.2.4",
+    "pino": "^8.15.6",
+    "reflect-metadata": "^0.1.13"
   }
 }

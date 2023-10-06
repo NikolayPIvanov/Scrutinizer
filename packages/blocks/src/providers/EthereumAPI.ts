@@ -73,7 +73,6 @@ export class EthereumAPI {
             return json.map((response: any) => response.result);
         } catch (error) {
             this.errorCount++;
-
             throw error;
         }
     }
@@ -124,23 +123,68 @@ export class EthereumAPI {
                         toBlock: `0x${blockNumber.toString(16)}`,
                     },
                 ],
-            },
+            }
         ]);
 
+        const block = result[0];
+        const logs = result[1];
+
         try {
-            parseInt(result[0].number, 16);
-            parseInt(result[0].timestamp, 16);
+            parseInt(block.number, 16);
+            parseInt(block.timestamp, 16);
         } catch (error) {
             this.errorCount++;
         }
 
+        block.transactions = block.transactions.map((tx: any) => ({
+            ...tx,
+            value: parseInt(tx.value, 16),
+            gas: parseInt(tx.gas, 16),
+            gasPrice: parseInt(tx.gasPrice, 16),
+            nonce: parseInt(tx.nonce, 16),
+            blockNumber: parseInt(tx.blockNumber, 16),
+            transactionIndex: parseInt(tx.transactionIndex, 16),
+            logs: logs.filter((l: any) => l.transactionHash === tx.hash),
+        }));
+
+        // const receipts: any[] = await this.getTransactionReceipts(block, logs);
+
         return {
+            ...block,
             chainId: this.chainId,
-            blockNumber: !!result[0] ? parseInt(result[0].number, 16) : null,
-            blockTimestamp: !!result[0] ? parseInt(result[0].timestamp, 16) : null,
-            ...result[0],
-            txLogs: result[1],
+            blockNumber: !!block ? parseInt(block.number, 16) : null,
+            blockTimestamp: !!block ? parseInt(block.timestamp, 16) : null,
+            txLogs: logs,
+            receipts: []
         };
+    }
+
+    async getTransactionReceipts(block: any, logs: any[]) {
+        const nativeOrFailedRequests = block.transactions
+            .map((tx: any) => {
+                const transactionLogs = logs.find((l: any) => l.transactionHash === tx.hash);
+                if (transactionLogs) {
+                    return null
+                }
+
+                return tx;
+            })
+            .filter((tx: any) => !!tx)
+            .map((tx: any) => ({
+                method: "eth_getTransactionReceipt",
+                params: [tx.hash.toLower],
+            })) as any[];
+
+        if (nativeOrFailedRequests.length === 0) {
+            return [];
+        }
+
+        const result = await this.MakeMultiRequest(nativeOrFailedRequests);
+        if (result.length > 0) {
+            throw new Error("Failed to get native transactions");
+        }
+
+        return result
     }
 
     async getChainId() {

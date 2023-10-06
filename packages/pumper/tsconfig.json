@@ -18,7 +18,5 @@
   "include": [
     "src/**/*.ts",
     "test/**/*.ts"
-,
-"../pumper/src/interfaces.ts"
-]
+  ]
 }

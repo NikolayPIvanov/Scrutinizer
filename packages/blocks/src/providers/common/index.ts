@@ -1,10 +1,10 @@
 export const to = async <T>(
   promise: Promise<T>
-): Promise<[T | null, Error | null]> => {
+): Promise<[T | null, unknown | null]> => {
   try {
     const result = await promise;
     return [result, null];
-  } catch (error: any | Error) {
+  } catch (error: unknown | null) {
     return [null, error];
   }
 };

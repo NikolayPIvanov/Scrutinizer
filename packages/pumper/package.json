@@ -1,10 +1,16 @@
 {
-  "name": "blocks",
-  "version": "1.0.0",
+  "name": "pumper",
+  "version": "0.0.0",
   "description": "",
-  "main": "index.ts",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "files": [
+    "build/src"
+  ],
+  "license": "Apache-2.0",
+  "keywords": [],
   "scripts": {
-    "start": "npx tsc -w",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "local": "nodemon src/index.ts",
     "lint": "gts lint",
     "clean": "gts clean",
@@ -14,25 +20,19 @@
     "pretest": "npm run compile",
     "posttest": "npm run lint"
   },
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
-    "@types/node": "^20.4.6",
-    "gts": "^5.0.1",
+    "@types/node": "20.8.2",
+    "gts": "^5.1.1",
     "nodemon": "^3.0.1",
-    "pino-pretty": "^10.2.0",
     "ts-node": "^10.9.1",
-    "typescript": "~5.1.6"
+    "typescript": "~5.2.0"
   },
   "dependencies": {
     "axios": "^1.5.1",
     "dotenv": "^16.3.1",
-    "ethers": "^6.7.1",
     "inversify": "^6.0.1",
-    "joi": "^17.10.2",
+    "joi": "^17.11.0",
     "kafkajs": "^2.2.4",
-    "ksqldb-client": "^1.0.5",
-    "pino": "^8.15.3",
     "reflect-metadata": "^0.1.13"
   }
 }
