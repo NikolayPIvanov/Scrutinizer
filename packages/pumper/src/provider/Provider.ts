@@ -199,6 +199,10 @@ export class Provider implements IProvider {
         (_, i) => i + this.latestBlock + 1
       );
 
+      if (blocks[0] !== this.latestBlock + 1) {
+        throw new Error('Invalid block calculation');
+      }
+
       await this.kafkaClient.producer.sendBatch({
         acks: 1,
         compression: 0,
