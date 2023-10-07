@@ -24,20 +24,19 @@ export class ProviderConfigurationMerger
     private configuration: IConfiguration
   ) {}
 
-  public mergeConfigurations = async (): Promise<
-    ITransformedExtendedRpcInstance[]
-  > => {
-    const {chainIdsList, rpcUrlsList} = await this.fetchConfigurations();
+  public mergeConfigurations =
+    async (): Promise<ITransformedExtendedRpcInstance> => {
+      const {chainIdsList, rpcUrlsList} = await this.fetchConfigurations();
 
-    const extendedChainRpcUrlPair = this.prepareExtendedChainRpcUrlPair(
-      rpcUrlsList,
-      chainIdsList
-    );
+      const extendedChainRpcUrlPair = this.prepareExtendedChainRpcUrlPair(
+        rpcUrlsList,
+        chainIdsList
+      );
 
-    return this.prepareTransformedExtendedChainRpcUrlPair(
-      extendedChainRpcUrlPair
-    );
-  };
+      return this.prepareTransformedExtendedChainRpcUrlPair(
+        extendedChainRpcUrlPair
+      );
+    };
 
   private fetchConfigurations = async () => {
     const [chainIdsList, rpcUrlsList] = await Promise.all([
@@ -68,8 +67,8 @@ export class ProviderConfigurationMerger
 
   private prepareTransformedExtendedChainRpcUrlPair = (
     extendedChainRpcUrlPair: IExtendedChainRpcUrlPair
-  ): ITransformedExtendedRpcInstance[] =>
-    Object.values(extendedChainRpcUrlPair)
+  ): ITransformedExtendedRpcInstance => {
+    const configurations = Object.values(extendedChainRpcUrlPair)
       .map(row => ({
         ...row,
         rpcs: row.rpcs
@@ -77,6 +76,7 @@ export class ProviderConfigurationMerger
           .map(row => row.url)
           .filter(row => !row.includes('infura.io'))
           .filter(row => !row.includes('bsc-dataseed'))
+          .filter(row => !row.startsWith('wss'))
           .sort(() => (Math.random() > 0.5 ? -1 : 1)),
       }))
       .filter(
@@ -85,4 +85,11 @@ export class ProviderConfigurationMerger
           row.rpcs.length >= 3 &&
           row.chainId === this.configuration.network.chainId
       );
+
+    if (!configurations?.length) {
+      throw new Error('No configurations!');
+    }
+
+    return configurations[0];
+  };
 }

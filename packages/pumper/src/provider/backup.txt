@@ -1,14 +1,15 @@
-import { inject, injectable } from 'inversify';
+import {inject, injectable} from 'inversify';
+import {to} from '../common';
+import {ILogger} from '../logger';
+import {TYPES} from '../types';
+import {EvmApi} from './EvmApi';
 import {
-  IBlockNumberEmitter,
-  ILogger,
+  IEvmApi,
+  INodeStorageRepository,
   IProvider,
-  IProviderRpcConfiguration,
-  TYPES,
-} from '../types';
-import { to } from '../utils';
-import { EthereumAPI } from './EthereumAPI';
-import { RequestMultiplePromisesWithTimeout } from './utils';
+} from './provider.interfaces';
+import {ITransformedExtendedRpcInstance} from './scrapers/scraper.interfaces';
+import {requestMultiplePromisesWithTimeout} from './utils';
 
 export const getConsensusValue = (arr: number[]) => {
   const frequency = new Map();
@@ -33,10 +34,10 @@ export const getConsensusValue = (arr: number[]) => {
 };
 
 @injectable()
-export class RpcJsonProvider implements IProvider {
+export class Provider implements IProvider {
   private readonly maxProviderCount = 5;
-  private readonly providers: EthereumAPI[] = [];
-  private readonly allProviders: EthereumAPI[] = [];
+  private providers: IEvmApi[] = [];
+  private allProviders: IEvmApi[] = [];
 
   private maxRequestTime = 500;
   private refreshProvidersInterval = 15000;
@@ -47,15 +48,16 @@ export class RpcJsonProvider implements IProvider {
   private intervalHandler!: NodeJS.Timer;
   private readonly logging: boolean | undefined;
 
-  private providerRpcConfiguration: IProviderRpcConfiguration | undefined;
+  private providerRpcConfiguration: ITransformedExtendedRpcInstance | undefined;
 
   constructor(
-    @inject(TYPES.IBlockNumberEmitter) private emitter: IBlockNumberEmitter,
-    @inject(TYPES.ILogger) private logger: ILogger
+    @inject(TYPES.ILogger) private logger: ILogger,
+    @inject(TYPES.INodeStorageRepository)
+    private nodeStorageRepository: INodeStorageRepository
   ) {}
 
   public initialize = async (
-    providerRpcConfiguration: IProviderRpcConfiguration
+    providerRpcConfiguration: ITransformedExtendedRpcInstance
   ) => {
     this.providerRpcConfiguration = providerRpcConfiguration;
 
@@ -65,31 +67,39 @@ export class RpcJsonProvider implements IProvider {
   };
 
   private async loadProviders() {
+    if (this.providerRpcConfiguration === undefined) {
+      throw new Error('Missing configuration');
+    }
+
     const providers = this.providerRpcConfiguration?.rpcs!.map(
       rpc =>
-        new EthereumAPI(
-          rpc,
-          this.providerRpcConfiguration?.chainId!,
-          this.providerRpcConfiguration?.name!
-        )
+        new EvmApi(this.nodeStorageRepository, {
+          endpoint: rpc,
+          chainId: this.providerRpcConfiguration!.chainId!,
+          chainName: this.providerRpcConfiguration!.name!,
+        }) as unknown as IEvmApi
     );
 
-    providers?.forEach(async provider => {
-      this.allProviders.push(provider);
+    this.allProviders = await Promise.all(
+      providers?.map(async provider => {
+        if (this.providers.length >= this.maxProviderCount) {
+          return provider;
+        }
 
-      if (this.providers.length >= this.maxProviderCount) {
-        return;
-      }
+        const [chainId, error] = await to(provider.getChainId());
+        if (error) {
+          return provider;
+        }
 
-      const [chainId, error] = await to(provider.getChainId());
-      if (error) {
-        this.logger.error(error);
-      }
+        if (chainId === this.providerRpcConfiguration?.chainId) {
+          this.providers.push(provider);
+        }
 
-      if (chainId === this.providerRpcConfiguration?.chainId) {
-        this.providers.push(provider);
-      }
-    });
+        return provider;
+      })
+    );
+
+    console.log(this.providers);
   }
 
   private start() {
@@ -101,14 +111,14 @@ export class RpcJsonProvider implements IProvider {
   }
 
   private initializeBlockTimeCalculation = () => {
-    const period = 1000 * Math.random();
+    const delay = 1000 * Math.random();
 
     setTimeout(async () => {
       const [, error] = await to(this.calculateBlockTime());
       if (error) {
         this.logger.error('calculateBlockTime', error);
       }
-    }, period); // increase to more than 1 second - between 1 and 10 seconds.
+    }, delay);
   };
 
   private initializePeriodicProviderRefresh = () =>
@@ -124,7 +134,9 @@ export class RpcJsonProvider implements IProvider {
         if (this.blockLag > 1) {
           this.refreshProviders();
         }
-      } catch (error) {}
+      } catch (error) {
+        this.logger.error(error);
+      }
     }, this.blockTime * BLOCKS_PERIOD);
   };
 
@@ -140,49 +152,54 @@ export class RpcJsonProvider implements IProvider {
       }
 
       // If we have block_lag more than 10, we can fetch the next
-      if (this.blockLag <= 2) {
-        await this.getNextBlock(this.latestBlock);
-      } else if (this.blockLag > 2 && this.blockLag < 10) {
-        await this.getNextBlock(this.latestBlock, this.getFastestProvider());
-      } else {
-        this.logger.info(`Lag is ${this.blockLag}, catching up now!`);
-        const parameters = [];
-        const provider = this.getFastestProvider();
-        const fillBlocks = this.blockLag / 2;
-        for (let i = 0; i < fillBlocks; i++) {
-          parameters.push(this.latestBlock + i);
-        }
+      // if (this.blockLag <= 2) {
+      //   await this.getNextBlock(this.latestBlock);
+      // } else if (this.blockLag > 2 && this.blockLag < 10) {
+      //   await this.getNextBlock(this.latestBlock, this.getFastestProvider());
+      // } else {
+      //   this.logger.info(`Lag is ${this.blockLag}, catching up now!`);
+      //   const parameters = [];
+      //   const provider = this.getFastestProvider();
+      //   const fillBlocks = this.blockLag / 2;
+      //   for (let i = 0; i < fillBlocks; i++) {
+      //     parameters.push(this.latestBlock + i);
+      //   }
 
-        const results = await Promise.all(
-          parameters.map(async parameter => {
-            const [, error] = await to(this.getNextBlock(parameter, provider));
-            return {parameter, errored: !!error, reason: error};
-          })
-        );
+      //   const results = await Promise.all(
+      //     parameters.map(async parameter => {
+      //       const [, error] = await to(this.getNextBlock(parameter, provider));
+      //       return {parameter, errored: !!error, reason: error};
+      //     })
+      //   );
 
-        const erroredBlocks = results
-          .filter(r => r.errored)
-          .sort((a, b) => a.parameter - b.parameter);
+      //   const erroredBlocks = results
+      //     .filter(r => r.errored)
+      //     .sort((a, b) => a.parameter - b.parameter);
 
-        if (erroredBlocks.length) {
-          this.logger.info(`Errored: ${erroredBlocks.map(e => e.parameter)}`);
-          this.logger.error(
-            `There was errored at: ${erroredBlocks[0].parameter}, reason: ${erroredBlocks[0].reason}`
-          );
-          this.latestBlock = erroredBlocks[0].parameter; // continue from the first errored.
-        }
+      //   if (erroredBlocks.length) {
+      //     this.logger.info(`Errored: ${erroredBlocks.map(e => e.parameter)}`);
+      //     this.logger.error(
+      //       `There was errored at: ${erroredBlocks[0].parameter}, reason: ${erroredBlocks[0].reason}`
+      //     );
+      //     this.latestBlock = erroredBlocks[0].parameter; // continue from the first errored.
+      //   }
 
-        await this.calculateBlockLag();
+      //   await this.calculateBlockLag();
+      // }
+
+      const catchUpBlocks = this.blockLag / 2 || 1;
+      if (catchUpBlocks > this.latestBlock) {
+        this.latestBlock += catchUpBlocks;
       }
-    } catch (error) {
-      this.logger.error({error, method: 'Timeout', blockTime: this.blockTime});
+    } catch (error: any) {
+      this.logger.error(error.message);
       await new Promise(resolve => setTimeout(resolve, this.blockTime));
-    } finally {
-      return this.fetchBlocks();
     }
+
+    return this.fetchBlocks();
   }
 
-  async getNextBlock(blockNumber: number, forcedProvider?: EthereumAPI) {
+  async getNextBlock(blockNumber: number, forcedProvider?: IEvmApi) {
     const time = Date.now();
 
     const blockFull = await this.getFullBlock(blockNumber + 1, forcedProvider);
@@ -191,18 +208,18 @@ export class RpcJsonProvider implements IProvider {
       this.refreshProviders();
     }
 
-    if (blockFull.number) {
-      this.emitter.addToQueue({
-        block: blockFull,
-      });
-    }
+    // if (blockFull.number) {
+    //   this.emitter.addToQueue({
+    //     block: blockFull,
+    //   });
+    // }
 
     if (blockFull.blockNumber > this.latestBlock) {
       this.latestBlock = blockFull.blockNumber;
     }
   }
 
-  async getFullBlock(blockNumber: number, forcedProvider?: EthereumAPI) {
+  async getFullBlock(blockNumber: number, forcedProvider?: IEvmApi) {
     try {
       if (forcedProvider) {
         return forcedProvider.getFullBlock(blockNumber);
@@ -212,7 +229,7 @@ export class RpcJsonProvider implements IProvider {
         return provider.getFullBlock(blockNumber);
       });
 
-      const {success, error} = await RequestMultiplePromisesWithTimeout(
+      const {success} = await requestMultiplePromisesWithTimeout(
         promises,
         this.maxRequestTime
       );
@@ -243,16 +260,20 @@ export class RpcJsonProvider implements IProvider {
     }
 
     throw new Error(
-      `No valid block found! Chain: ${this.providerRpcConfiguration?.name}`
+      `No valid block found! Chain: ${this.providerRpcConfiguration?.name}, block: ${blockNumber}, latest: ${this.latestBlock}}`
     );
   }
 
   async calculateBlockLag() {
     const promises = this.providers.map(provider => provider.getBlockNumber());
-    const {success} = await RequestMultiplePromisesWithTimeout(
+    const {success} = await requestMultiplePromisesWithTimeout(
       promises,
       this.maxRequestTime
     );
+
+    if (success.length === 0) {
+      return;
+    }
 
     const latestBlock = getConsensusValue(success);
     if (latestBlock) {
@@ -306,44 +327,50 @@ export class RpcJsonProvider implements IProvider {
         return;
       }
 
-      if (Math.random() > 0.5) {
-        this.providers.sort((a, b) => a.errorCount - b.errorCount);
-      } else {
-        this.providers.sort((a, b) => a.latency - b.latency);
+      // if (Math.random() > 0.5) {
+
+      // } else {
+      //   this.providers.sort((a, b) => a.latency - b.latency);
+      // }
+      this.providers.sort((a, b) => a.errorCount - b.errorCount);
+
+      const nextProvider = availableProviders[0]; // Math.floor(Math.random() * availableProviders.length)
+
+      const [, error] = await to(nextProvider.getBlock());
+      if (error) {
+        return;
       }
 
-      const nextProvider =
-        availableProviders[
-          Math.floor(Math.random() * availableProviders.length)
-        ];
-
-      try {
-        await nextProvider.getFullBlock(this.latestBlock);
-
-        const chainId = await nextProvider.getChainId();
-
-        if (chainId === this.providerRpcConfiguration?.chainId!) {
-          this.providers.pop();
-
-          this.providers.push(nextProvider);
-        }
-      } catch (error) {
-        throw error;
+      const [chainId, err] = await to(nextProvider.getChainId());
+      if (err) {
+        return;
       }
-    } catch (error) {}
+
+      if (chainId === this.providerRpcConfiguration?.chainId) {
+        this.providers.pop();
+
+        this.providers.push(nextProvider);
+      }
+    } catch (error: any) {
+      this.logger.error(`${error.message!}`);
+    }
   }
 
   private async getBlockNumber() {
     const promises = this.providers.map(provider => provider.getBlockNumber());
 
-    const {success, error} = await RequestMultiplePromisesWithTimeout(
+    const {success} = await requestMultiplePromisesWithTimeout(
       promises,
       this.maxRequestTime
     );
 
+    if (success.length === 0) {
+      return;
+    }
+
     const latestBlock = getConsensusValue(success);
     if (latestBlock) {
-      this.latestBlock = getConsensusValue(success);
+      this.latestBlock = latestBlock;
     } else {
       this.logger.error('Error: ', 'Cannot GetConsensusValue latestBlock');
     }

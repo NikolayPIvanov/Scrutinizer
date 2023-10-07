@@ -1,7 +1,7 @@
-export const RequestPromisesWithTimeout = async (
-  promise: Promise<any>,
+export const requestPromisesWithTimeout = async <T>(
+  promise: Promise<T>,
   timeout = 10000
-): Promise<any> => {
+): Promise<T> => {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       reject(new Error(`Promise timed out after ${timeout} ms`));
@@ -19,12 +19,12 @@ export const RequestPromisesWithTimeout = async (
   });
 };
 
-export const RequestMultiplePromisesWithTimeout = async (
-  promises: Promise<any>[],
+export const requestMultiplePromisesWithTimeout = async <T>(
+  promises: Promise<T>[],
   timeout = 10000
-): Promise<{success: any[]; error: any[]}> => {
+): Promise<{success: T[]; error: T[]}> => {
   const timeoutPromises = promises.map(promise =>
-    RequestPromisesWithTimeout(promise, timeout)
+    requestPromisesWithTimeout(promise, timeout)
   );
 
   const results = await Promise.allSettled(timeoutPromises);

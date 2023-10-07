@@ -6,4 +6,6 @@ export const TYPES = {
   IChainRpcScrapper: Symbol('IChainRpcScrapper'),
   IChainConfigurationScrapper: Symbol('IChainConfigurationScrapper'),
   IProviderConfigurationMerger: Symbol('IProviderConfigurationMerger'),
+  INodeStorageRepository: Symbol('INodeStorageRepository'),
+  IProvider: Symbol('IProvider'),
 };

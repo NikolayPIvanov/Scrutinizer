@@ -7,8 +7,14 @@ import {
 } from './configuration';
 
 import {ILogger, Logger} from './logger';
+import {NodeStorageRepository} from './provider/NodeStorageRepository';
+import {Provider} from './provider/Provider';
 import {ProviderConfigurationMerger} from './provider/ProviderConfigurationMerger';
-import {IProviderConfigurationMerger} from './provider/provider.interfaces';
+import {
+  INodeStorageRepository,
+  IProvider,
+  IProviderConfigurationMerger,
+} from './provider/provider.interfaces';
 import {ChainIdScrapper} from './provider/scrapers/ChainIdScrapper';
 import {ChainRpcScrapper} from './provider/scrapers/ChainRpcScrapper';
 import {
@@ -47,6 +53,12 @@ export class ContainerInstance extends Container {
     this.bind<IProviderConfigurationMerger>(TYPES.IProviderConfigurationMerger)
       .to(ProviderConfigurationMerger)
       .inSingletonScope();
+
+    this.bind<INodeStorageRepository>(TYPES.INodeStorageRepository)
+      .to(NodeStorageRepository)
+      .inSingletonScope();
+
+    this.bind<IProvider>(TYPES.IProvider).to(Provider).inSingletonScope();
 
     this.bind<ILogger>(TYPES.ILogger).to(Logger).inSingletonScope();
   }

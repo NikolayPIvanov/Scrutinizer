@@ -1,0 +1,278 @@
+import {inject, injectable} from 'inversify';
+import {to} from '../common';
+import {ILogger} from '../logger';
+import {TYPES} from '../types';
+import {EvmApi} from './EvmApi';
+import {
+  IEvmApi,
+  INodeStorageRepository,
+  IProvider,
+} from './provider.interfaces';
+import {ITransformedExtendedRpcInstance} from './scrapers/scraper.interfaces';
+import {requestMultiplePromisesWithTimeout} from './utils';
+
+export const getConsensusValue = (arr: number[]) => {
+  const frequency = new Map();
+  let maxCount = 0;
+  let consensusValue = 0;
+
+  if (arr.length === 0) {
+    throw new Error('Cannot get consensus value of empty array');
+  }
+
+  for (const value of arr) {
+    const count = frequency.get(value) || 0;
+    frequency.set(value, count + 1);
+
+    if (count + 1 > maxCount) {
+      maxCount = count + 1;
+      consensusValue = value;
+    }
+  }
+
+  return consensusValue;
+};
+
+@injectable()
+export class Provider implements IProvider {
+  private readonly maxProviderCount = 5;
+  private providers: IEvmApi[] = [];
+  private allProviders: IEvmApi[] = [];
+
+  private maxRequestTime = 500;
+  private refreshProvidersInterval = 15000;
+  private latestBlock = 0;
+  private blockLag = 0;
+  private blockTime: number = 0.25 * 1000;
+
+  private providerRpcConfiguration: ITransformedExtendedRpcInstance | undefined;
+
+  constructor(
+    @inject(TYPES.ILogger) private logger: ILogger,
+    @inject(TYPES.INodeStorageRepository)
+    private nodeStorageRepository: INodeStorageRepository
+  ) {}
+
+  public initialize = async (
+    providerRpcConfiguration: ITransformedExtendedRpcInstance
+  ) => {
+    this.providerRpcConfiguration = providerRpcConfiguration;
+
+    await this.loadProviders();
+
+    this.start();
+  };
+
+  private async loadProviders() {
+    if (this.providerRpcConfiguration === undefined) {
+      throw new Error('Missing configuration');
+    }
+
+    const providers = this.providerRpcConfiguration?.rpcs!.map(
+      rpc =>
+        new EvmApi(this.nodeStorageRepository, {
+          endpoint: rpc,
+          chainId: this.providerRpcConfiguration!.chainId!,
+          chainName: this.providerRpcConfiguration!.name!,
+        }) as unknown as IEvmApi
+    );
+
+    this.allProviders = await Promise.all(
+      providers?.map(async provider => {
+        if (this.providers.length >= this.maxProviderCount) {
+          return provider;
+        }
+
+        const [chainId, error] = await to(provider.getChainId());
+        if (error) {
+          return provider;
+        }
+
+        if (chainId === this.providerRpcConfiguration?.chainId) {
+          this.providers.push(provider);
+        }
+
+        return provider;
+      })
+    );
+
+    console.log(this.providers);
+  }
+
+  private start() {
+    this.initializeBlockTimeCalculation();
+    this.initializePeriodicProviderRefresh();
+    this.initializePeriodicBlockLag();
+  }
+
+  private initializeBlockTimeCalculation = () => {
+    const delay = 1000 * Math.random();
+
+    setTimeout(async () => {
+      const [, error] = await to(this.calculateBlockTime());
+      if (error) {
+        this.logger.error('calculateBlockTime', error);
+      }
+    }, delay);
+  };
+
+  private initializePeriodicProviderRefresh = () =>
+    setInterval(() => this.refreshProviders(), this.refreshProvidersInterval);
+
+  private initializePeriodicBlockLag = () => {
+    const BLOCKS_PERIOD = 30;
+
+    setInterval(() => {
+      try {
+        this.calculateBlockLagAndLatestBlock();
+
+        if (this.blockLag > 1) {
+          this.refreshProviders();
+        }
+      } catch (error) {
+        this.logger.error(error);
+      }
+    }, this.blockTime * BLOCKS_PERIOD);
+  };
+
+  async getFullBlock(blockNumber: number, forcedProvider?: IEvmApi) {
+    try {
+      if (forcedProvider) {
+        return forcedProvider.getFullBlock(blockNumber);
+      }
+
+      const promises = this.providers.map(provider => {
+        return provider.getFullBlock(blockNumber);
+      });
+
+      const {success} = await requestMultiplePromisesWithTimeout(
+        promises,
+        this.maxRequestTime
+      );
+
+      const validated = success
+        .filter(
+          e => !!e?.number && !!e?.timestamp && !!e?.transactions && !!e?.txLogs
+        )
+        .sort((a, b) => b.txLogs?.length - a.txLogs?.length);
+
+      const bestBlock = validated.find(
+        block =>
+          !!block?.number &&
+          !!block?.timestamp &&
+          block?.transactions?.length > 0 &&
+          block?.txLogs?.length > 0
+      );
+
+      if (bestBlock?.number) {
+        return bestBlock;
+      }
+
+      if (validated[0]?.number) {
+        return validated[0];
+      }
+    } catch (error) {
+      this.logger.error(error);
+    }
+
+    throw new Error(
+      `No valid block found! Chain: ${this.providerRpcConfiguration?.name}, block: ${blockNumber}, latest: ${this.latestBlock}}`
+    );
+  }
+
+  async calculateBlockLagAndLatestBlock() {
+    const promises = this.providers.map(provider => provider.getBlockNumber());
+    const {success} = await requestMultiplePromisesWithTimeout(
+      promises,
+      this.maxRequestTime
+    );
+
+    if (success.length === 0) {
+      return;
+    }
+
+    const latestBlock = getConsensusValue(success);
+    if (latestBlock) {
+      this.blockLag = latestBlock - this.latestBlock;
+
+      if (this.latestBlock !== 0) {
+        const blocks = [...Array(this.blockLag)].map(
+          (_, i) => i + this.latestBlock + 1
+        );
+
+        console.log(blocks);
+      }
+
+      if (latestBlock > this.latestBlock) {
+        this.latestBlock = latestBlock;
+      }
+    }
+  }
+
+  async calculateBlockTime() {
+    await this.calculateBlockLagAndLatestBlock();
+
+    const blockNumber = this.latestBlock;
+
+    const [latestBlock, prevBlock] = await Promise.all([
+      this.getFullBlock(blockNumber),
+      this.getFullBlock(blockNumber - 1),
+    ]);
+
+    const blockTime = latestBlock.blockTimestamp - prevBlock.blockTimestamp;
+
+    // BlockTime is UnixTimeStamp
+    const previousBlockTime = this.blockTime;
+    this.blockTime = Math.max(this.blockTime, blockTime * 1000);
+
+    this.logger.info(
+      `Block time is ${this.blockTime}, was ${previousBlockTime}`
+    );
+  }
+
+  private async refreshProviders() {
+    try {
+      const availableProviders = this.allProviders.filter(
+        e => !this.providers.find(k => k.endpointUrl === e.endpointUrl)
+      );
+
+      if (availableProviders.length < 1) {
+        return;
+      }
+
+      if (
+        this.providers.filter(e => e.errorCount > 0 || e.latency > 500)
+          .length === 0
+      ) {
+        return;
+      }
+
+      // if (Math.random() > 0.5) {
+
+      // } else {
+      //   this.providers.sort((a, b) => a.latency - b.latency);
+      // }
+      this.providers.sort((a, b) => a.errorCount - b.errorCount);
+
+      const nextProvider = availableProviders[0]; // Math.floor(Math.random() * availableProviders.length)
+
+      const [, error] = await to(nextProvider.getBlock());
+      if (error) {
+        return;
+      }
+
+      const [chainId, err] = await to(nextProvider.getChainId());
+      if (err) {
+        return;
+      }
+
+      if (chainId === this.providerRpcConfiguration?.chainId) {
+        this.providers.pop();
+
+        this.providers.push(nextProvider);
+      }
+    } catch (error: any) {
+      this.logger.error(`${error.message!}`);
+    }
+  }
+}
