@@ -8,6 +8,7 @@ export const client = new KsqldbClient({
 });
 
 export let initialized = false;
+
 export const bootstrap = async () => {
   await client.connect();
 

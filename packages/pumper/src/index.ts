@@ -9,29 +9,31 @@ import {
 } from './provider/provider.interfaces';
 import {TYPES} from './types';
 
+import {bootstrap} from './ksql/KsqldbClient';
+import {getLatestCommittedBlockNumber} from './ksql/Queries';
+
 (async () => {
+  await bootstrap();
+
   const container = new ContainerInstance();
 
   const kafkaClient = container.get<IKafkaClient>(TYPES.IKafkaClient);
-
   await kafkaClient.bootstrap();
 
   const nodeStorageRepository = container.get<INodeStorageRepository>(
     TYPES.INodeStorageRepository
   );
-
   await nodeStorageRepository.init();
 
   const providerConfigurationMerger =
     container.get<IProviderConfigurationMerger>(
       TYPES.IProviderConfigurationMerger
     );
-
-  const provider = container.get<IProvider>(TYPES.IProvider);
-
   const configuration = await providerConfigurationMerger.mergeConfigurations();
 
-  console.log(configuration);
+  const latestCommittedBlockNumber = await getLatestCommittedBlockNumber();
 
-  provider.initialize(configuration);
+  console.log('latestCommittedBlockNumber', latestCommittedBlockNumber);
+  const provider = container.get<IProvider>(TYPES.IProvider);
+  provider.initialize(configuration, latestCommittedBlockNumber);
 })();

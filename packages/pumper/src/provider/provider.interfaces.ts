@@ -29,6 +29,7 @@ export interface IEvmApi {
 
 export interface IProvider {
   initialize: (
-    providerRpcConfiguration: ITransformedExtendedRpcInstance
+    providerRpcConfiguration: ITransformedExtendedRpcInstance,
+    lastCommitted?: number
   ) => Promise<void>;
 }

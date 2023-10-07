@@ -13,7 +13,7 @@ import {
 import {ITransformedExtendedRpcInstance} from './scrapers/scraper.interfaces';
 import {requestMultiplePromisesWithTimeout} from './utils';
 
-export const getConsensusValue = (arr: number[]) => {
+export const getConsensusValue = (arr: number[]): number => {
   const frequency = new Map();
   let maxCount = 0;
   let consensusValue = 0;
@@ -52,13 +52,14 @@ export class Provider implements IProvider {
   ) {}
 
   public initialize = async (
-    providerRpcConfiguration: ITransformedExtendedRpcInstance
+    providerRpcConfiguration: ITransformedExtendedRpcInstance,
+    lastCommitted = 0
   ) => {
     this.providerRpcConfiguration = providerRpcConfiguration;
 
     await this.loadProviders();
 
-    this.start();
+    this.start(lastCommitted);
   };
 
   private async loadProviders() {
@@ -97,15 +98,17 @@ export class Provider implements IProvider {
     );
   }
 
-  private async start() {
-    await this.initializeBlockTimeCalculation();
+  private async start(lastCommitted: number) {
+    await this.initializeBlockTimeCalculation(lastCommitted);
 
     this.initializePeriodicProviderRefresh();
     this.initializePeriodicBlockLag();
   }
 
-  private initializeBlockTimeCalculation = async () => {
-    const [, error] = await to(this.calculateBlockLagAndLatestBlock());
+  private initializeBlockTimeCalculation = async (lastCommitted: number) => {
+    const [, error] = await to(
+      this.calculateBlockLagAndLatestBlock(lastCommitted)
+    );
     if (error) {
       this.logger.error('calculateBlockTime', error);
     }
@@ -176,7 +179,7 @@ export class Provider implements IProvider {
     );
   }
 
-  async calculateBlockLagAndLatestBlock() {
+  async calculateBlockLagAndLatestBlock(lastCommitted?: number) {
     const promises = this.providers.map(provider => provider.getBlockNumber());
     const {success} = await requestMultiplePromisesWithTimeout(
       promises,
@@ -192,16 +195,26 @@ export class Provider implements IProvider {
       return;
     }
 
-    const currentBlockLag = latestBlock - this.latestBlock;
-
-    if (this.latestBlock !== 0) {
-      const blocks = [...Array(currentBlockLag)].map(
-        (_, i) => i + this.latestBlock + 1
+    if (lastCommitted && lastCommitted < latestBlock) {
+      const currentBlockLag = latestBlock - lastCommitted;
+      const blocks = this.constructConsequentArray(
+        currentBlockLag,
+        this.latestBlock
       );
 
-      if (blocks[0] !== this.latestBlock + 1) {
-        throw new Error('Invalid block calculation');
-      }
+      this.verifyConsequentArray(blocks, lastCommitted);
+
+      return;
+    }
+
+    const currentBlockLag = latestBlock - this.latestBlock;
+    if (this.latestBlock !== 0) {
+      const blocks = this.constructConsequentArray(
+        currentBlockLag,
+        this.latestBlock
+      );
+
+      this.verifyConsequentArray(blocks, this.latestBlock);
 
       await this.kafkaClient.producer.sendBatch({
         acks: 1,
@@ -211,13 +224,13 @@ export class Provider implements IProvider {
             topic: this.configuration.kafka.topics.blocks,
             messages: blocks.map(block => ({
               key: block.toString(),
-              value: JSON.stringify({blockNumber: block.toString()}),
+              value: JSON.stringify({blockNumber: block}),
             })),
           },
         ],
       });
 
-      console.log(blocks); // Send to Kafka in here!
+      console.log(`Successfully sent ${blocks.length} block numbers`);
     }
 
     this.blockLag = currentBlockLag;
@@ -225,6 +238,31 @@ export class Provider implements IProvider {
       this.latestBlock = latestBlock;
     }
   }
+
+  private constructConsequentArray = (length: number, start: number) =>
+    [...Array(length)].map((_, i) => start + i + 1);
+
+  private verifyConsequentArray = (arr: number[], pivot: number) => {
+    if (arr[0] !== pivot + 1) {
+      throw new Error('Invalid block calculation');
+    }
+  };
+
+  private sendBlockNumbersToKafka = (blocks: number[]) => {
+    this.kafkaClient.producer.sendBatch({
+      acks: 1,
+      compression: 0,
+      topicMessages: [
+        {
+          topic: this.configuration.kafka.topics.blocks,
+          messages: blocks.map(block => ({
+            key: block.toString(),
+            value: JSON.stringify({blockNumber: block}),
+          })),
+        },
+      ],
+    });
+  };
 
   private async refreshProviders() {
     try {
