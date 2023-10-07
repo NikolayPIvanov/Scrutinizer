@@ -7,6 +7,7 @@ import {
 } from './configuration';
 
 import {ILogger, Logger} from './logger';
+import {IKafkaClient, KafkaClient} from './messaging';
 import {NodeStorageRepository} from './provider/NodeStorageRepository';
 import {Provider} from './provider/Provider';
 import {ProviderConfigurationMerger} from './provider/ProviderConfigurationMerger';
@@ -59,6 +60,10 @@ export class ContainerInstance extends Container {
       .inSingletonScope();
 
     this.bind<IProvider>(TYPES.IProvider).to(Provider).inSingletonScope();
+
+    this.bind<IKafkaClient>(TYPES.IKafkaClient)
+      .to(KafkaClient)
+      .inSingletonScope();
 
     this.bind<ILogger>(TYPES.ILogger).to(Logger).inSingletonScope();
   }

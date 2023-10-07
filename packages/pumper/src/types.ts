@@ -8,4 +8,5 @@ export const TYPES = {
   IProviderConfigurationMerger: Symbol('IProviderConfigurationMerger'),
   INodeStorageRepository: Symbol('INodeStorageRepository'),
   IProvider: Symbol('IProvider'),
+  IKafkaClient: Symbol('IKafkaClient'),
 };

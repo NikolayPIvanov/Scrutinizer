@@ -1,6 +1,8 @@
 import {inject, injectable} from 'inversify';
 import {to} from '../common';
+import {IConfiguration} from '../configuration';
 import {ILogger} from '../logger';
+import {IKafkaClient} from '../messaging';
 import {TYPES} from '../types';
 import {EvmApi} from './EvmApi';
 import {
@@ -35,20 +37,16 @@ export const getConsensusValue = (arr: number[]) => {
 
 @injectable()
 export class Provider implements IProvider {
-  private readonly maxProviderCount = 5;
   private providers: IEvmApi[] = [];
   private allProviders: IEvmApi[] = [];
-
-  private maxRequestTime = 500;
-  private refreshProvidersInterval = 15000;
   private latestBlock = 0;
   private blockLag = 0;
-  private blockTime: number = 0.25 * 1000;
-
   private providerRpcConfiguration: ITransformedExtendedRpcInstance | undefined;
 
   constructor(
     @inject(TYPES.ILogger) private logger: ILogger,
+    @inject(TYPES.IConfiguration) private configuration: IConfiguration,
+    @inject(TYPES.IKafkaClient) private kafkaClient: IKafkaClient,
     @inject(TYPES.INodeStorageRepository)
     private nodeStorageRepository: INodeStorageRepository
   ) {}
@@ -79,7 +77,9 @@ export class Provider implements IProvider {
 
     this.allProviders = await Promise.all(
       providers?.map(async provider => {
-        if (this.providers.length >= this.maxProviderCount) {
+        if (
+          this.providers.length >= this.configuration.network.maxProviderCount
+        ) {
           return provider;
         }
 
@@ -95,44 +95,40 @@ export class Provider implements IProvider {
         return provider;
       })
     );
-
-    console.log(this.providers);
   }
 
-  private start() {
-    this.initializeBlockTimeCalculation();
+  private async start() {
+    await this.initializeBlockTimeCalculation();
+
     this.initializePeriodicProviderRefresh();
     this.initializePeriodicBlockLag();
   }
 
-  private initializeBlockTimeCalculation = () => {
-    const delay = 1000 * Math.random();
-
-    setTimeout(async () => {
-      const [, error] = await to(this.calculateBlockTime());
-      if (error) {
-        this.logger.error('calculateBlockTime', error);
-      }
-    }, delay);
+  private initializeBlockTimeCalculation = async () => {
+    const [, error] = await to(this.calculateBlockLagAndLatestBlock());
+    if (error) {
+      this.logger.error('calculateBlockTime', error);
+    }
   };
 
   private initializePeriodicProviderRefresh = () =>
-    setInterval(() => this.refreshProviders(), this.refreshProvidersInterval);
+    setInterval(
+      () => this.refreshProviders(),
+      this.configuration.network.refreshProvidersInterval
+    );
 
   private initializePeriodicBlockLag = () => {
-    const BLOCKS_PERIOD = 30;
-
     setInterval(() => {
       try {
         this.calculateBlockLagAndLatestBlock();
 
-        if (this.blockLag > 1) {
+        if (this.blockLag > this.configuration.network.blockLagThreshold) {
           this.refreshProviders();
         }
       } catch (error) {
         this.logger.error(error);
       }
-    }, this.blockTime * BLOCKS_PERIOD);
+    }, this.configuration.network.blockTime * this.configuration.network.checkBlockLagIntervalMultiplier);
   };
 
   async getFullBlock(blockNumber: number, forcedProvider?: IEvmApi) {
@@ -147,7 +143,7 @@ export class Provider implements IProvider {
 
       const {success} = await requestMultiplePromisesWithTimeout(
         promises,
-        this.maxRequestTime
+        this.configuration.network.maxRequestTime
       );
 
       const validated = success
@@ -184,7 +180,7 @@ export class Provider implements IProvider {
     const promises = this.providers.map(provider => provider.getBlockNumber());
     const {success} = await requestMultiplePromisesWithTimeout(
       promises,
-      this.maxRequestTime
+      this.configuration.network.maxRequestTime
     );
 
     if (success.length === 0) {
@@ -192,42 +188,38 @@ export class Provider implements IProvider {
     }
 
     const latestBlock = getConsensusValue(success);
-    if (latestBlock) {
-      this.blockLag = latestBlock - this.latestBlock;
-
-      if (this.latestBlock !== 0) {
-        const blocks = [...Array(this.blockLag)].map(
-          (_, i) => i + this.latestBlock + 1
-        );
-
-        console.log(blocks);
-      }
-
-      if (latestBlock > this.latestBlock) {
-        this.latestBlock = latestBlock;
-      }
+    if (!latestBlock) {
+      return;
     }
-  }
 
-  async calculateBlockTime() {
-    await this.calculateBlockLagAndLatestBlock();
+    const currentBlockLag = latestBlock - this.latestBlock;
 
-    const blockNumber = this.latestBlock;
+    if (this.latestBlock !== 0) {
+      const blocks = [...Array(currentBlockLag)].map(
+        (_, i) => i + this.latestBlock + 1
+      );
 
-    const [latestBlock, prevBlock] = await Promise.all([
-      this.getFullBlock(blockNumber),
-      this.getFullBlock(blockNumber - 1),
-    ]);
+      await this.kafkaClient.producer.sendBatch({
+        acks: 1,
+        compression: 0,
+        topicMessages: [
+          {
+            topic: this.configuration.kafka.topics.blocks,
+            messages: blocks.map(block => ({
+              key: block.toString(),
+              value: JSON.stringify({blockNumber: block.toString()}),
+            })),
+          },
+        ],
+      });
 
-    const blockTime = latestBlock.blockTimestamp - prevBlock.blockTimestamp;
+      console.log(blocks); // Send to Kafka in here!
+    }
 
-    // BlockTime is UnixTimeStamp
-    const previousBlockTime = this.blockTime;
-    this.blockTime = Math.max(this.blockTime, blockTime * 1000);
-
-    this.logger.info(
-      `Block time is ${this.blockTime}, was ${previousBlockTime}`
-    );
+    this.blockLag = currentBlockLag;
+    if (latestBlock > this.latestBlock) {
+      this.latestBlock = latestBlock;
+    }
   }
 
   private async refreshProviders() {
@@ -247,14 +239,9 @@ export class Provider implements IProvider {
         return;
       }
 
-      // if (Math.random() > 0.5) {
-
-      // } else {
-      //   this.providers.sort((a, b) => a.latency - b.latency);
-      // }
       this.providers.sort((a, b) => a.errorCount - b.errorCount);
 
-      const nextProvider = availableProviders[0]; // Math.floor(Math.random() * availableProviders.length)
+      const nextProvider = availableProviders[0];
 
       const [, error] = await to(nextProvider.getBlock());
       if (error) {
@@ -271,8 +258,8 @@ export class Provider implements IProvider {
 
         this.providers.push(nextProvider);
       }
-    } catch (error: any) {
-      this.logger.error(`${error.message!}`);
+    } catch (error: unknown) {
+      this.logger.error(`${(error as any).message!}`);
     }
   }
 }

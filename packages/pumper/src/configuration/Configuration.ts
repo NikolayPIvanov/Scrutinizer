@@ -42,6 +42,13 @@ export class Configuration implements IConfiguration {
     },
     network: {
       chainId: +process.env.CHAIN_ID!,
+      checkBlockLagIntervalMultiplier:
+        +process.env.CHECK_BLOCK_LAG_INTERVAL_MULTIPLIER!,
+      blockLagThreshold: +process.env.BLOCK_LAG_THRESHOLD!,
+      blockTime: +process.env.BLOCK_TIME!,
+      maxProviderCount: +process.env.MAX_PROVIDER_COUNT!,
+      maxRequestTime: +process.env.MAX_REQUEST_TIME!,
+      refreshProvidersInterval: +process.env.REFRESH_PROVIDERS_INTERVAL!,
     },
   });
 }
