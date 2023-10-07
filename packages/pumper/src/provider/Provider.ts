@@ -42,6 +42,7 @@ export class Provider implements IProvider {
   private latestBlock = 0;
   private blockLag = 0;
   private providerRpcConfiguration: ITransformedExtendedRpcInstance | undefined;
+  private lastCommitted: number | undefined;
 
   constructor(
     @inject(TYPES.ILogger) private logger: ILogger,
@@ -106,9 +107,8 @@ export class Provider implements IProvider {
   }
 
   private initializeBlockTimeCalculation = async (lastCommitted: number) => {
-    const [, error] = await to(
-      this.calculateBlockLagAndLatestBlock(lastCommitted)
-    );
+    this.lastCommitted = lastCommitted;
+    const [, error] = await to(this.calculateBlockLagAndLatestBlock());
     if (error) {
       this.logger.error('calculateBlockTime', error);
     }
@@ -179,7 +179,7 @@ export class Provider implements IProvider {
     );
   }
 
-  async calculateBlockLagAndLatestBlock(lastCommitted?: number) {
+  async calculateBlockLagAndLatestBlock() {
     const promises = this.providers.map(provider => provider.getBlockNumber());
     const {success} = await requestMultiplePromisesWithTimeout(
       promises,
@@ -195,14 +195,18 @@ export class Provider implements IProvider {
       return;
     }
 
-    if (lastCommitted && lastCommitted < latestBlock) {
-      const currentBlockLag = latestBlock - lastCommitted;
+    if (this.lastCommitted && this.lastCommitted < latestBlock) {
+      const currentBlockLag = latestBlock - this.lastCommitted;
       const blocks = this.constructConsequentArray(
         currentBlockLag,
-        this.latestBlock
+        this.lastCommitted
       );
 
-      this.verifyConsequentArray(blocks, lastCommitted);
+      this.verifyConsequentArray(blocks, this.lastCommitted);
+
+      await this.sendBlockNumbersToKafka(blocks);
+
+      this.lastCommitted = undefined;
 
       return;
     }
@@ -216,21 +220,7 @@ export class Provider implements IProvider {
 
       this.verifyConsequentArray(blocks, this.latestBlock);
 
-      await this.kafkaClient.producer.sendBatch({
-        acks: 1,
-        compression: 0,
-        topicMessages: [
-          {
-            topic: this.configuration.kafka.topics.blocks,
-            messages: blocks.map(block => ({
-              key: block.toString(),
-              value: JSON.stringify({blockNumber: block}),
-            })),
-          },
-        ],
-      });
-
-      console.log(`Successfully sent ${blocks.length} block numbers`);
+      await this.sendBlockNumbersToKafka(blocks);
     }
 
     this.blockLag = currentBlockLag;
@@ -248,8 +238,8 @@ export class Provider implements IProvider {
     }
   };
 
-  private sendBlockNumbersToKafka = (blocks: number[]) => {
-    this.kafkaClient.producer.sendBatch({
+  private sendBlockNumbersToKafka = async (blocks: number[]) => {
+    await this.kafkaClient.producer.sendBatch({
       acks: 1,
       compression: 0,
       topicMessages: [
@@ -262,6 +252,8 @@ export class Provider implements IProvider {
         },
       ],
     });
+
+    this.logger.info(`Successfully sent ${blocks.length} block numbers`);
   };
 
   private async refreshProviders() {
