@@ -1,5 +1,5 @@
 import {inject, injectable} from 'inversify';
-import {Admin, Kafka, Producer} from 'kafkajs';
+import {Admin, ConsumerConfig, Kafka, Producer} from 'kafkajs';
 import {IConfiguration} from '../configuration';
 import {TYPES} from '../types';
 import {IKafkaClient} from './kafka.interfaces';
@@ -21,6 +21,18 @@ export class KafkaClient implements IKafkaClient {
     this.admin = this.kafka.admin();
     this.producer = this.kafka.producer();
   }
+
+  public consumer = async (config: ConsumerConfig, topic: string) => {
+    const consumer = this.kafka.consumer(config);
+
+    await consumer.connect();
+    await consumer.subscribe({
+      topic,
+      fromBeginning: true,
+    });
+
+    return consumer;
+  };
 
   public bootstrap = async () => {
     await this.producer.connect();

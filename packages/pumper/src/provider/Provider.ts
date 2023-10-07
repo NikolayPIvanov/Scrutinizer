@@ -196,15 +196,26 @@ export class Provider implements IProvider {
     }
 
     if (this.lastCommitted && this.lastCommitted < latestBlock) {
-      const currentBlockLag = latestBlock - this.lastCommitted;
-      const blocks = this.constructConsequentArray(
+      const currentBlockLag = latestBlock - this.lastCommitted; // we need to catch up this many blocks
+      const maxBlocksPerIteration = 25000;
+      const blocksPerIteration = Math.min(
         currentBlockLag,
+        maxBlocksPerIteration
+      );
+
+      const blocks = this.constructConsequentArray(
+        blocksPerIteration,
         this.lastCommitted
       );
 
       this.verifyConsequentArray(blocks, this.lastCommitted);
 
       await this.sendBlockNumbersToKafka(blocks);
+
+      if (currentBlockLag > maxBlocksPerIteration) {
+        this.lastCommitted += maxBlocksPerIteration;
+        return;
+      }
 
       this.lastCommitted = undefined;
 

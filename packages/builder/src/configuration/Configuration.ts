@@ -39,6 +39,9 @@ export class Configuration implements IConfiguration {
       topics: {
         blocks: process.env.BLOCKS_TOPIC!,
       },
+      groups: {
+        blocks: process.env.BLOCKS_GROUP!,
+      },
     },
     network: {
       chainId: +process.env.CHAIN_ID!,

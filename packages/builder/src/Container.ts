@@ -8,6 +8,8 @@ import {
 
 import {ILogger, Logger} from './logger';
 import {IKafkaClient, KafkaClient} from './messaging';
+import {BlockNumberConsumer} from './messaging/BlockNumberConsumer';
+import {IConsumer} from './messaging/kafka.interfaces';
 import {NodeStorageRepository} from './provider/NodeStorageRepository';
 import {Provider} from './provider/Provider';
 import {ProviderConfigurationMerger} from './provider/ProviderConfigurationMerger';
@@ -63,6 +65,10 @@ export class ContainerInstance extends Container {
 
     this.bind<IKafkaClient>(TYPES.IKafkaClient)
       .to(KafkaClient)
+      .inSingletonScope();
+
+    this.bind<IConsumer>(TYPES.IBlockNumberConsumer)
+      .to(BlockNumberConsumer)
       .inSingletonScope();
 
     this.bind<ILogger>(TYPES.ILogger).to(Logger).inSingletonScope();

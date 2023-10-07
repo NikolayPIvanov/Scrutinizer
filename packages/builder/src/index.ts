@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import {ContainerInstance} from './Container';
 import {IKafkaClient} from './messaging';
+import {IConsumer} from './messaging/kafka.interfaces';
 import {
   INodeStorageRepository,
   IProvider,
@@ -29,4 +30,8 @@ import {TYPES} from './types';
 
   const configuration = await providerConfigurationMerger.mergeConfigurations();
   provider.initialize(configuration);
+
+  const consumer = container.get<IConsumer>(TYPES.IBlockNumberConsumer);
+
+  await consumer.initialize();
 })();

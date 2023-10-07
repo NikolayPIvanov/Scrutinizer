@@ -2,7 +2,6 @@ import {inject, injectable} from 'inversify';
 import {to} from '../common';
 import {IConfiguration} from '../configuration';
 import {ILogger} from '../logger';
-import {IKafkaClient} from '../messaging';
 import {TYPES} from '../types';
 import {EvmApi} from './EvmApi';
 import {
@@ -39,29 +38,47 @@ export const getConsensusValue = (arr: number[]): number => {
 export class Provider implements IProvider {
   private providers: IEvmApi[] = [];
   private allProviders: IEvmApi[] = [];
-  private latestBlock = 0;
-  private blockLag = 0;
   private providerRpcConfiguration: ITransformedExtendedRpcInstance | undefined;
-  private lastCommitted: number | undefined;
 
   constructor(
     @inject(TYPES.ILogger) private logger: ILogger,
     @inject(TYPES.IConfiguration) private configuration: IConfiguration,
-    @inject(TYPES.IKafkaClient) private kafkaClient: IKafkaClient,
     @inject(TYPES.INodeStorageRepository)
     private nodeStorageRepository: INodeStorageRepository
   ) {}
 
   public initialize = async (
-    providerRpcConfiguration: ITransformedExtendedRpcInstance,
-    lastCommitted = 0
+    providerRpcConfiguration: ITransformedExtendedRpcInstance
   ) => {
     this.providerRpcConfiguration = providerRpcConfiguration;
 
     await this.loadProviders();
 
-    this.start(lastCommitted);
+    this.start();
   };
+
+  public async getBlock(blockNumber: number) {
+    const time = Date.now();
+
+    const blockFull = await this.getFullBlock(
+      blockNumber,
+      this.getFastestProvider()
+    );
+
+    if (Date.now() - time > this.configuration.network.maxRequestTime) {
+      this.refreshProviders();
+    }
+
+    return blockFull;
+  }
+
+  private getFastestProvider() {
+    const fasterProvider = this.providers
+      .filter(e => e.errorCount === 0)
+      .sort((a, b) => a.latency - b.latency)?.[0];
+
+    return fasterProvider ?? null;
+  }
 
   private async loadProviders() {
     if (this.providerRpcConfiguration === undefined) {
@@ -99,20 +116,9 @@ export class Provider implements IProvider {
     );
   }
 
-  private async start(lastCommitted: number) {
-    await this.initializeBlockTimeCalculation(lastCommitted);
-
+  private async start() {
     this.initializePeriodicProviderRefresh();
-    this.initializePeriodicBlockLag();
   }
-
-  private initializeBlockTimeCalculation = async (lastCommitted: number) => {
-    this.lastCommitted = lastCommitted;
-    const [, error] = await to(this.calculateBlockLagAndLatestBlock());
-    if (error) {
-      this.logger.error('calculateBlockTime', error);
-    }
-  };
 
   private initializePeriodicProviderRefresh = () =>
     setInterval(
@@ -120,21 +126,7 @@ export class Provider implements IProvider {
       this.configuration.network.refreshProvidersInterval
     );
 
-  private initializePeriodicBlockLag = () => {
-    setInterval(() => {
-      try {
-        this.calculateBlockLagAndLatestBlock();
-
-        if (this.blockLag > this.configuration.network.blockLagThreshold) {
-          this.refreshProviders();
-        }
-      } catch (error) {
-        this.logger.error(error);
-      }
-    }, this.configuration.network.blockTime * this.configuration.network.checkBlockLagIntervalMultiplier);
-  };
-
-  async getFullBlock(blockNumber: number, forcedProvider?: IEvmApi) {
+  private async getFullBlock(blockNumber: number, forcedProvider?: IEvmApi) {
     try {
       if (forcedProvider) {
         return forcedProvider.getFullBlock(blockNumber);
@@ -175,86 +167,9 @@ export class Provider implements IProvider {
     }
 
     throw new Error(
-      `No valid block found! Chain: ${this.providerRpcConfiguration?.name}, block: ${blockNumber}, latest: ${this.latestBlock}}`
+      `No valid block found! Chain: ${this.providerRpcConfiguration?.name}, block: ${blockNumber}`
     );
   }
-
-  async calculateBlockLagAndLatestBlock() {
-    const promises = this.providers.map(provider => provider.getBlockNumber());
-    const {success} = await requestMultiplePromisesWithTimeout(
-      promises,
-      this.configuration.network.maxRequestTime
-    );
-
-    if (success.length === 0) {
-      return;
-    }
-
-    const latestBlock = getConsensusValue(success);
-    if (!latestBlock) {
-      return;
-    }
-
-    if (this.lastCommitted && this.lastCommitted < latestBlock) {
-      const currentBlockLag = latestBlock - this.lastCommitted;
-      const blocks = this.constructConsequentArray(
-        currentBlockLag,
-        this.lastCommitted
-      );
-
-      this.verifyConsequentArray(blocks, this.lastCommitted);
-
-      await this.sendBlockNumbersToKafka(blocks);
-
-      this.lastCommitted = undefined;
-
-      return;
-    }
-
-    const currentBlockLag = latestBlock - this.latestBlock;
-    if (this.latestBlock !== 0) {
-      const blocks = this.constructConsequentArray(
-        currentBlockLag,
-        this.latestBlock
-      );
-
-      this.verifyConsequentArray(blocks, this.latestBlock);
-
-      await this.sendBlockNumbersToKafka(blocks);
-    }
-
-    this.blockLag = currentBlockLag;
-    if (latestBlock > this.latestBlock) {
-      this.latestBlock = latestBlock;
-    }
-  }
-
-  private constructConsequentArray = (length: number, start: number) =>
-    [...Array(length)].map((_, i) => start + i + 1);
-
-  private verifyConsequentArray = (arr: number[], pivot: number) => {
-    if (arr[0] !== pivot + 1) {
-      throw new Error('Invalid block calculation');
-    }
-  };
-
-  private sendBlockNumbersToKafka = async (blocks: number[]) => {
-    await this.kafkaClient.producer.sendBatch({
-      acks: 1,
-      compression: 0,
-      topicMessages: [
-        {
-          topic: this.configuration.kafka.topics.blocks,
-          messages: blocks.map(block => ({
-            key: block.toString(),
-            value: JSON.stringify({blockNumber: block}),
-          })),
-        },
-      ],
-    });
-
-    this.logger.info(`Successfully sent ${blocks.length} block numbers`);
-  };
 
   private async refreshProviders() {
     try {
@@ -273,7 +188,11 @@ export class Provider implements IProvider {
         return;
       }
 
-      this.providers.sort((a, b) => a.errorCount - b.errorCount);
+      if (Math.random() > 0.5) {
+        this.providers.sort((a, b) => a.errorCount - b.errorCount);
+      } else {
+        this.providers.sort((a, b) => a.latency - b.latency);
+      }
 
       const nextProvider = availableProviders[0];
 
