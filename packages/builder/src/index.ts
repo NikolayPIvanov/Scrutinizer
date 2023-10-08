@@ -3,45 +3,13 @@ import 'reflect-metadata';
 import {ContainerInstance} from './Container';
 import {IConfiguration} from './configuration';
 import {IKafkaClient} from './messaging';
-import {IConsumer} from './messaging/kafka.interfaces';
+import {IConsumer, IExtendedKafkaMessage} from './messaging/kafka.interfaces';
 import {
   INodeStorageRepository,
   IProvider,
   IProviderConfigurationMerger,
 } from './provider/provider.interfaces';
 import {TYPES} from './types';
-
-// const handle = async message => {
-//   const raw = message.value?.toString();
-//   if (!raw) {
-//     this.logger.error(`Received empty block number, offset ${message.offset}`);
-//     return;
-//   }
-
-//   const {blockNumber} = JSON.parse(raw);
-
-//   if (Number.isNaN(blockNumber)) {
-//     this.logger.error(
-//       `Block number ${blockNumber} is not a number, offset ${message.offset}`
-//     );
-//     return;
-//   }
-
-//   const block = await this.provider.getBlock(blockNumber);
-
-//   await this.kafkaClient.producer.send({
-//     acks: 1,
-//     topic: this.configuration.kafka.topics.fullBlock,
-//     messages: [
-//       {
-//         key: message.key,
-//         value: JSON.stringify(block),
-//       },
-//     ],
-//   });
-
-//   // this.logger.info(block);
-// };
 
 (async () => {
   const container = new ContainerInstance();
@@ -68,16 +36,47 @@ import {TYPES} from './types';
 
   const consumer = container.get<IConsumer>(TYPES.IConsumer);
 
+  const handle = async (message: IExtendedKafkaMessage) => {
+    const raw = message.value?.toString();
+    if (!raw) {
+      return;
+    }
+
+    const {blockNumber} = JSON.parse(raw);
+
+    if (Number.isNaN(blockNumber)) {
+      return;
+    }
+
+    const lag = +message.highWaterOffset - +message.offset;
+    const forceFastestProvider = lag > 100;
+
+    const block = await provider.getBlock(blockNumber, forceFastestProvider);
+
+    await kafkaClient.producer.send({
+      acks: 1,
+      topic: configuration.kafka.topics.fullBlock.name,
+      messages: [
+        {
+          key: message.key,
+          value: JSON.stringify(block),
+        },
+      ],
+    });
+  };
+
   await consumer.initialize({
     groupId: configuration.kafka.groups.blocks,
     topicsList: [configuration.kafka.topics.blocks.name],
     autoCommit: false,
+    onData: handle,
     config: {
       maxBytesPerPartition: 1000000,
       heartbeatInterval: 3000,
       fromBeginning: true,
       maxParallelHandles: 1,
       maxQueueSize: 100,
+      retryTopic: configuration.kafka.topics.retryBlocks.name,
     },
   });
 })();

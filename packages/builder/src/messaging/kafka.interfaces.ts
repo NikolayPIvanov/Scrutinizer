@@ -31,4 +31,5 @@ export interface IConsumerConfig {
 export interface IExtendedKafkaMessage extends RecordBatchEntry {
   partition: number;
   topic: string;
+  highWaterOffset: string;
 }

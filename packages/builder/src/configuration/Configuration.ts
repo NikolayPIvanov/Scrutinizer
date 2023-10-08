@@ -45,6 +45,9 @@ export class Configuration implements IConfiguration {
             +process.env.BLOCKS_TOPIC_MAX_BYTES_PER_PARTITION! ||
             DEFAULT_MAX_BYTES_PER_PARTITION,
         },
+        retryBlocks: {
+          name: process.env.RETRY_BLOCKS_TOPIC_NAME!,
+        },
         fullBlock: {
           name: process.env.FULL_BLOCKS_TOPIC!,
         },

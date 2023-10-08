@@ -1,6 +1,7 @@
 import {QueueObject, queue} from 'async';
 import {inject, injectable} from 'inversify';
 import {Consumer, EachBatchPayload} from 'kafkajs';
+import {to} from '../common';
 import {ILogger} from '../logger';
 import {TYPES} from '../types';
 import {
@@ -98,6 +99,7 @@ export class BaseConsumer<T extends IExtendedKafkaMessage>
           ...message,
           partition: batch.partition,
           topic: batch.topic,
+          highWaterOffset: batch.highWatermark,
         } as IExtendedKafkaMessage;
 
         this.logger.info(
@@ -137,22 +139,29 @@ export class BaseConsumer<T extends IExtendedKafkaMessage>
     handler?: (data: IExtendedKafkaMessage) => Promise<void>
   ) {
     try {
-      try {
-        if (!handler) throw new Error('No handler provided');
+      if (!handler) throw new Error('No handler provided');
 
-        this.commitManager.notifyStartProcessing(data);
-        await handler(data);
-      } catch (e) {
-        this.logger.error(`Error handling message: ${e}`);
-        data.headers = data.headers || {};
-        data.headers.originalTopic = data.topic;
-        await this.kafkaClient.producer.send({
-          topic: config.retryTopic,
-          messages: [data], // TODO: Check if should be array?
-        });
+      this.commitManager.notifyStartProcessing(data);
+      const [, error] = await to(handler(data));
+      if (!error) {
+        return;
       }
-    } catch (e) {
-      this.logger.error(`Error producing to retry: ${e}`);
+
+      this.logger.error(`Error handling message: ${error}`);
+
+      data.headers = data.headers || {};
+      data.headers.originalTopic = data.topic;
+      const [, e] = await to(
+        this.kafkaClient.producer.send({
+          acks: 1,
+          topic: config.retryTopic,
+          messages: [data],
+        })
+      );
+
+      if (e) {
+        this.logger.error(`Error producing to retry: ${e}`);
+      }
     } finally {
       this.commitManager.notifyFinishedProcessing(data);
     }

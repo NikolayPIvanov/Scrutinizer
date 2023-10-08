@@ -25,6 +25,7 @@ const topicConfigurationSchema = joi.object<ITopicConfiguration>().keys({
 
 const topicsSchema = joi.object<ITopicsConfiguration>().keys({
   blocks: topicConfigurationSchema,
+  retryBlocks: topicConfigurationSchema,
   fullBlock: topicConfigurationSchema,
 });
 

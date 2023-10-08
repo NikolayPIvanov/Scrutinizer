@@ -57,12 +57,12 @@ export class Provider implements IProvider {
     this.start();
   };
 
-  public async getBlock(blockNumber: number) {
+  public async getBlock(blockNumber: number, forceFastestProvider?: boolean) {
     const time = Date.now();
 
     const blockFull = await this.getFullBlock(
       blockNumber,
-      this.getFastestProvider()
+      forceFastestProvider ? this.getFastestProvider() : undefined
     );
 
     if (Date.now() - time > this.configuration.network.maxRequestTime) {

@@ -32,5 +32,5 @@ export interface IProvider {
     providerRpcConfiguration: ITransformedExtendedRpcInstance,
     lastCommitted?: number
   ) => Promise<void>;
-  getBlock(blockNumber: number): Promise<any>;
+  getBlock(blockNumber: number, forceFastestProvider?: boolean): Promise<any>;
 }

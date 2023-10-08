@@ -16,6 +16,7 @@ export interface ITopicConfiguration {
 
 export interface ITopicsConfiguration {
   blocks: ITopicConfiguration;
+  retryBlocks: ITopicConfiguration;
   fullBlock: ITopicConfiguration;
 }
 
