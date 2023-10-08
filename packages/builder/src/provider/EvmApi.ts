@@ -75,18 +75,24 @@ export class EvmApi implements IEvmApi {
       this.errorCount++;
     }
 
-    // block.transactions = block.transactions.map((tx: any) => ({
-    //   ...tx,
-    //   value: parseInt(tx.value, 16),
-    //   gas: parseInt(tx.gas, 16),
-    //   gasPrice: parseInt(tx.gasPrice, 16),
-    //   nonce: parseInt(tx.nonce, 16),
-    //   blockNumber: parseInt(tx.blockNumber, 16),
-    //   transactionIndex: parseInt(tx.transactionIndex, 16),
-    //   logs: logs.filter((l: any) => l.transactionHash === tx.hash),
-    // }));
+    block.transactions = block.transactions.map((tx: any) => ({
+      ...tx,
+      gas: parseInt(tx.gas, 16),
+      nonce: parseInt(tx.nonce, 16),
+      blockNumber: parseInt(tx.blockNumber, 16),
+      transactionIndex: parseInt(tx.transactionIndex, 16),
+      logs: logs.filter(
+        (l: any) => l.transactionHash === tx.hash && l.removed === false
+      ),
+    }));
 
-    // const receipts: any[] = await this.getTransactionReceipts(block, logs);
+    const relativeNativeTransfers = block.transactions.filter(
+      (t: any) => t.type !== '0x6a' && t.value !== '0x0' && t.logs.length === 0
+    );
+
+    if (relativeNativeTransfers.length) {
+      block.native = relativeNativeTransfers;
+    }
 
     return {
       ...block,

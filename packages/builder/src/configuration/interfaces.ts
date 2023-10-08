@@ -9,8 +9,14 @@ export interface IGroupConfiguration {
   blocks: string;
 }
 
+export interface ITopicConfiguration {
+  name: string;
+  maxBytesPerPartition?: number;
+}
+
 export interface ITopicsConfiguration {
-  blocks: string;
+  blocks: ITopicConfiguration;
+  fullBlock: ITopicConfiguration;
 }
 
 export interface ILoggingConfiguration {

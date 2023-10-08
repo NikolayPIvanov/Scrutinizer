@@ -6,6 +6,7 @@ import {
   IKafkaConfiguration,
   ILoggingConfiguration,
   INetworkConfiguration,
+  ITopicConfiguration,
   ITopicsConfiguration,
 } from './interfaces';
 import joi = require('joi');
@@ -17,8 +18,14 @@ const loggingSchema = joi.object<ILoggingConfiguration>().keys({
     .optional(),
 });
 
+const topicConfigurationSchema = joi.object<ITopicConfiguration>().keys({
+  name: joi.string().required(),
+  maxBytesPerPartition: joi.number().optional(),
+});
+
 const topicsSchema = joi.object<ITopicsConfiguration>().keys({
-  blocks: joi.string().required(),
+  blocks: topicConfigurationSchema,
+  fullBlock: topicConfigurationSchema,
 });
 
 const groupsSchema = joi.object<IGroupConfiguration>().keys({

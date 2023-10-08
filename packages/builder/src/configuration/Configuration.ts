@@ -11,6 +11,8 @@ import {
 
 dotenv.config();
 
+const DEFAULT_MAX_BYTES_PER_PARTITION = 1048576;
+
 @injectable()
 export class Configuration implements IConfiguration {
   logging: ILoggingConfiguration;
@@ -37,7 +39,15 @@ export class Configuration implements IConfiguration {
       clientId: process.env.KAFKA_CLIENT_ID!,
       brokers: process.env.KAFKA_BROKERS?.split(',') || [],
       topics: {
-        blocks: process.env.BLOCKS_TOPIC!,
+        blocks: {
+          name: process.env.BLOCKS_TOPIC_NAME!,
+          maxBytesPerPartition:
+            +process.env.BLOCKS_TOPIC_MAX_BYTES_PER_PARTITION! ||
+            DEFAULT_MAX_BYTES_PER_PARTITION,
+        },
+        fullBlock: {
+          name: process.env.FULL_BLOCKS_TOPIC!,
+        },
       },
       groups: {
         blocks: process.env.BLOCKS_GROUP!,

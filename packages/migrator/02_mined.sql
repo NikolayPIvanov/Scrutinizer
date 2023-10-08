@@ -1,5 +1,17 @@
 # docker exec -it ksqldb-cli ksql http://ksqldb-server:8088
 
+CREATE STREAM blocks_full (
+  hash varchar,
+  parentHash varchar,
+  `number` varchar,
+  `timestamp` varchar
+)
+WITH (
+  kafka_topic='scrutinizer.full.blocks',
+  value_format='json',
+  partitions=10);
+
+
 CREATE STREAM mined_transactions (
   blockNumber int,
   chainId int,

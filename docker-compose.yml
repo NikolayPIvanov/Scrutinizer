@@ -55,6 +55,7 @@ services:
       - kafka1
       - kafka2
       - kafka3
+      - zookeeper
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka1:9092,kafka2:9092,kafka3:9092
@@ -85,9 +86,3 @@ services:
       - ksqldb-server
     entrypoint: /bin/sh
     tty: true
-  super-node:
-    image: valamidev/evm-supernode:latest
-    container_name: supernode
-    ports:
-      - "3000:443"
-    restart: always

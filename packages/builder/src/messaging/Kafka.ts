@@ -22,12 +22,12 @@ export class KafkaClient implements IKafkaClient {
     this.producer = this.kafka.producer();
   }
 
-  public consumer = async (config: ConsumerConfig, topic: string) => {
+  public consumer = async (config: ConsumerConfig, topics: string[]) => {
     const consumer = this.kafka.consumer(config);
 
     await consumer.connect();
     await consumer.subscribe({
-      topic,
+      topics,
       fromBeginning: true,
     });
 
