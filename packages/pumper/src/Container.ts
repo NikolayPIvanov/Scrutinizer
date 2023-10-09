@@ -6,8 +6,18 @@ import {
   IConfigurationValidationSchema,
 } from './configuration';
 
+import {IValidator, Validator} from './Validator';
 import {ILogger, Logger} from './logger';
 import {IKafkaClient, KafkaClient} from './messaging';
+import {BaseConsumer} from './messaging/BaseConsumer';
+import {CommitManager} from './messaging/CommitManager';
+import {FullBlockConsumer} from './messaging/FullBlockConsumer';
+import {FullBlockRetryConsumer} from './messaging/FullBlockRetryConsumer';
+import {
+  ICommitManager,
+  IConsumer,
+  IConsumerInstance,
+} from './messaging/kafka.interfaces';
 import {NodeStorageRepository} from './provider/NodeStorageRepository';
 import {Provider} from './provider/Provider';
 import {ProviderConfigurationMerger} from './provider/ProviderConfigurationMerger';
@@ -66,5 +76,25 @@ export class ContainerInstance extends Container {
       .inSingletonScope();
 
     this.bind<ILogger>(TYPES.ILogger).to(Logger).inSingletonScope();
+
+    this.bind<IValidator>(TYPES.IValidator).to(Validator).inSingletonScope();
+
+    this.bind<IConsumer>(TYPES.IConsumer).to(BaseConsumer).inTransientScope();
+
+    this.bind<ICommitManager>(TYPES.ICommitManager)
+      .to(CommitManager)
+      .inSingletonScope();
+
+    this.bind<IConsumerInstance>(TYPES.IConsumerInstance)
+      .to(FullBlockConsumer)
+      .inSingletonScope();
+
+    this.bind<IConsumerInstance>(TYPES.IConsumerInstance)
+      .to(FullBlockRetryConsumer)
+      .inSingletonScope();
+
+    this.getAll(TYPES.IConsumerInstance);
+    // const validator = this.get<IValidator>(TYPES.IValidator);
+    // setInterval(async () => validator.validate(), 5000);
   }
 }

@@ -9,4 +9,8 @@ export const TYPES = {
   INodeStorageRepository: Symbol('INodeStorageRepository'),
   IProvider: Symbol('IProvider'),
   IKafkaClient: Symbol('IKafkaClient'),
+  IConsumer: Symbol('IConsumer'),
+  IConsumerInstance: Symbol('IConsumerInstance'),
+  ICommitManager: Symbol('ICommitManager'),
+  IValidator: Symbol('IValidator'),
 };

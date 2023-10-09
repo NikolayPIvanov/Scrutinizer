@@ -19,10 +19,13 @@ const loggingSchema = joi.object<ILoggingConfiguration>().keys({
 
 const topicsSchema = joi.object<ITopicsConfiguration>().keys({
   blocks: joi.string().required(),
+  fullBlock: joi.string().required(),
+  fullBlockRetry: joi.string().required(),
 });
 
 const groupsSchema = joi.object<IGroupConfiguration>().keys({
   fullBlock: joi.string().required(),
+  retryFullBlock: joi.string().required(),
 });
 
 const kafkaSchema = joi.object<IKafkaConfiguration>().keys({

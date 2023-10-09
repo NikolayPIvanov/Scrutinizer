@@ -39,9 +39,11 @@ export class Configuration implements IConfiguration {
       topics: {
         blocks: process.env.BLOCKS_TOPIC!,
         fullBlock: process.env.FULL_BLOCKS_TOPIC!,
+        fullBlockRetry: process.env.FULL_RETRY_BLOCKS_TOPIC!,
       },
       groups: {
         fullBlock: process.env.FULL_BLOCKS_TOPIC_CONSUMER_GROUP!,
+        retryFullBlock: process.env.FULL_RETRY_BLOCKS_TOPIC_CONSUMER_GROUP!,
       },
     },
     network: {

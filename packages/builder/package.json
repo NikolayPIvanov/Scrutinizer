@@ -36,6 +36,7 @@
     "async": "^3.2.4",
     "axios": "^1.5.1",
     "better-sqlite3": "^8.7.0",
+    "datastructures-js": "^13.0.0",
     "dotenv": "^16.3.1",
     "inversify": "^6.0.1",
     "joi": "^17.11.0",

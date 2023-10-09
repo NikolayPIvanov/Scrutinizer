@@ -7,9 +7,12 @@ export interface IKafkaConfiguration {
 
 export interface IGroupConfiguration {
   fullBlock: string;
+  retryFullBlock: string;
 }
 export interface ITopicsConfiguration {
   blocks: string;
+  fullBlock: string;
+  fullBlockRetry: string;
 }
 
 export interface ILoggingConfiguration {
