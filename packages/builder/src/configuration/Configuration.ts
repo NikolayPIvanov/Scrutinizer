@@ -54,6 +54,7 @@ export class Configuration implements IConfiguration {
       },
       groups: {
         blocks: process.env.BLOCKS_GROUP!,
+        blocksRetry: process.env.BLOCKS_RETRY_GROUP!,
       },
     },
     network: {

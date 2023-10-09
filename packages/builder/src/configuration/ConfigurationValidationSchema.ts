@@ -31,6 +31,7 @@ const topicsSchema = joi.object<ITopicsConfiguration>().keys({
 
 const groupsSchema = joi.object<IGroupConfiguration>().keys({
   blocks: joi.string().required(),
+  blocksRetry: joi.string().required(),
 });
 
 const kafkaSchema = joi.object<IKafkaConfiguration>().keys({

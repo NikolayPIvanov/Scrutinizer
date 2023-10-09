@@ -6,8 +6,19 @@ export interface IKafkaClient {
   bootstrap: () => Promise<void>;
 }
 
+export interface IConsumerInstance {
+  handle: (message: IExtendedKafkaMessage) => Promise<void>;
+}
+
 export interface IConsumer {
-  initialize: (data: any) => Promise<void>;
+  initialize: (data: {
+    groupId: string;
+    topicsList: string[];
+    autoCommit: boolean;
+    config: IConsumerConfig;
+    onData: (data: IExtendedKafkaMessage) => Promise<void>;
+    onError?: (error: unknown) => void;
+  }) => Promise<void>;
 }
 
 export interface ICommitManager {

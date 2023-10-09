@@ -7,6 +7,7 @@ export interface IKafkaConfiguration {
 
 export interface IGroupConfiguration {
   blocks: string;
+  blocksRetry: string;
 }
 
 export interface ITopicConfiguration {

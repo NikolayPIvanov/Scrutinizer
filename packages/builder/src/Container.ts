@@ -10,7 +10,13 @@ import {ILogger, Logger} from './logger';
 import {IKafkaClient, KafkaClient} from './messaging';
 import {BaseConsumer} from './messaging/BaseConsumer';
 import {CommitManager} from './messaging/CommitManager';
-import {ICommitManager, IConsumer} from './messaging/kafka.interfaces';
+import {NextBlockConsumer} from './messaging/NextBlockConsumer';
+import {RetryBlockConsumer} from './messaging/RetryBlockConsumer';
+import {
+  ICommitManager,
+  IConsumer,
+  IConsumerInstance,
+} from './messaging/kafka.interfaces';
 import {NodeStorageRepository} from './provider/NodeStorageRepository';
 import {Provider} from './provider/Provider';
 import {ProviderConfigurationMerger} from './provider/ProviderConfigurationMerger';
@@ -74,6 +80,16 @@ export class ContainerInstance extends Container {
       .to(CommitManager)
       .inSingletonScope();
 
+    this.bind<IConsumerInstance>(TYPES.IConsumerInstance)
+      .to(RetryBlockConsumer)
+      .inSingletonScope();
+
+    this.bind<IConsumerInstance>(TYPES.IConsumerInstance)
+      .to(NextBlockConsumer)
+      .inSingletonScope();
+
     this.bind<ILogger>(TYPES.ILogger).to(Logger).inSingletonScope();
+
+    this.getAll(TYPES.IConsumerInstance);
   }
 }

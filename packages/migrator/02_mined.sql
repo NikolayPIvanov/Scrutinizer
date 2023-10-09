@@ -1,6 +1,40 @@
 # docker exec -it ksqldb-cli ksql http://ksqldb-server:8088
 
 CREATE STREAM blocks_full (
+  baseFeePerGas varchar,
+  difficulty varchar,
+  extraData varchar,
+  gasLimit varchar,
+  gasUsed varchar,
+  hash varchar,
+  miner varchar,
+  nonce varchar,
+  `number` varchar,
+  parentHash varchar,
+  `timestamp` varchar
+  )
+  WITH (
+    kafka_topic='scrutinizer.full.blocks',
+    value_format='json',
+    partitions=10);
+
+CREATE TABLE blocks_unconfirmed_trace AS
+  SELECT `number`,
+         LATEST_BY_OFFSET(parentHash) AS parentHash,
+         LATEST_BY_OFFSET(hash) AS hash,
+         LATEST_BY_OFFSET(`timestamp`) AS `timestamp`
+  FROM blocks_full
+  GROUP BY `number`
+  EMIT CHANGES;
+
+
+
+
+
+
+
+
+CREATE STREAM blocks_full (
   hash varchar,
   parentHash varchar,
   `number` varchar,
@@ -10,6 +44,15 @@ WITH (
   kafka_topic='scrutinizer.full.blocks',
   value_format='json',
   partitions=10);
+
+CREATE TABLE blocks_main AS
+  SELECT `number`,
+         LATEST_BY_OFFSET(parentHash) AS parentHash,
+         LATEST_BY_OFFSET(hash) AS hash,
+         LATEST_BY_OFFSET(`timestamp`) AS `timestamp`
+  FROM blocks
+  GROUP BY `number`
+  EMIT CHANGES;
 
 
 CREATE STREAM mined_transactions (

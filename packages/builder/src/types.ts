@@ -10,5 +10,6 @@ export const TYPES = {
   IProvider: Symbol('IProvider'),
   IKafkaClient: Symbol('IKafkaClient'),
   IConsumer: Symbol('IConsumer'),
+  IConsumerInstance: Symbol('IConsumerInstance'),
   ICommitManager: Symbol('ICommitManager'),
 };
