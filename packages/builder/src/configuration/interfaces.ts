@@ -27,6 +27,7 @@ export interface ILoggingConfiguration {
 
 export interface INetworkConfiguration {
   chainId: number;
+  infuraUrl: string;
   checkBlockLagIntervalMultiplier: number;
   blockLagThreshold: number;
   blockTime: number;

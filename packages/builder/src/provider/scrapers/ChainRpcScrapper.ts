@@ -1,6 +1,7 @@
 import axios, {AxiosInstance} from 'axios';
 import {inject, injectable} from 'inversify';
 import {to} from '../../common';
+import {IConfiguration} from '../../configuration';
 import {ILogger} from '../../logger';
 import {TYPES} from '../../types';
 import {
@@ -14,7 +15,10 @@ import {IChainRpcUrlPair, IScrapper} from './scraper.interfaces';
 export class ChainRpcScrapper implements IScrapper<IChainRpcUrlPair> {
   private httpClient: AxiosInstance;
 
-  constructor(@inject(TYPES.ILogger) private logger: ILogger) {
+  constructor(
+    @inject(TYPES.ILogger) private logger: ILogger,
+    @inject(TYPES.IConfiguration) private configuration: IConfiguration
+  ) {
     this.httpClient = axios.create({
       baseURL: DEFI_LLAMA_GITHUB_BASE_URL,
     });
@@ -68,6 +72,12 @@ export class ChainRpcScrapper implements IScrapper<IChainRpcUrlPair> {
 
     rpcList['137'].rpcs.push({
       url: 'https://polygon.llamarpc.com',
+      tracking: 'none',
+      trackingDetails: 'privacyStatement',
+    });
+
+    rpcList['42161'].rpcs.push({
+      url: this.configuration.network.infuraUrl,
       tracking: 'none',
       trackingDetails: 'privacyStatement',
     });

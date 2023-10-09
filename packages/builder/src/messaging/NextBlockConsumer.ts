@@ -1,4 +1,5 @@
 import {inject, injectable} from 'inversify';
+import {to} from '../common';
 import {IConfiguration} from '../configuration/interfaces';
 import {IProvider} from '../provider/provider.interfaces';
 import {TYPES} from '../types';
@@ -25,8 +26,8 @@ export class NextBlockConsumer implements IConsumerInstance {
         maxBytesPerPartition: 1000000,
         heartbeatInterval: 5000,
         fromBeginning: true,
-        maxParallelHandles: 2000,
-        maxQueueSize: 5000,
+        maxParallelHandles: 50,
+        maxQueueSize: 50,
         retryTopic: configuration.kafka.topics.retryBlocks.name,
       },
       onData: this.handle.bind(this),
@@ -53,15 +54,25 @@ export class NextBlockConsumer implements IConsumerInstance {
       forceFastestProvider
     );
 
-    await this.kafkaClient.producer.send({
-      acks: 1,
-      topic: this.configuration.kafka.topics.fullBlock.name,
-      messages: [
-        {
-          key: message.key,
-          value: JSON.stringify(block),
-        },
-      ],
-    });
+    if (!block) {
+      throw new Error(`Block ${blockNumber} not found`);
+    }
+
+    const [, error] = await to(
+      this.kafkaClient.producer.send({
+        acks: 1,
+        topic: this.configuration.kafka.topics.fullBlock.name,
+        messages: [
+          {
+            key: message.key,
+            value: JSON.stringify(block),
+          },
+        ],
+      })
+    );
+
+    if (error) {
+      console.log(error);
+    }
   };
 }

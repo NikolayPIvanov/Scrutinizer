@@ -162,13 +162,17 @@ export class Provider implements IProvider {
       if (validated[0]?.number) {
         return validated[0];
       }
+
+      console.log(success);
     } catch (error) {
       this.logger.error(error);
     }
 
-    throw new Error(
+    this.logger.error(
       `No valid block found! Chain: ${this.providerRpcConfiguration?.name}, block: ${blockNumber}`
     );
+
+    return null;
   }
 
   private async refreshProviders() {

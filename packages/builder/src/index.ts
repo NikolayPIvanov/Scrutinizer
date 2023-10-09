@@ -22,10 +22,9 @@ import {TYPES} from './types';
     );
   const provider = container.get<IProvider>(TYPES.IProvider);
 
-  await Promise.allSettled([
-    kafkaClient.bootstrap(),
-    nodeStorageRepository.init(),
-  ]);
+  await kafkaClient.bootstrap();
+
+  await Promise.allSettled([nodeStorageRepository.init()]);
 
   const providersConfiguration =
     await providerConfigurationMerger.mergeConfigurations();

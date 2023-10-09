@@ -59,6 +59,7 @@ export class Configuration implements IConfiguration {
     },
     network: {
       chainId: +process.env.CHAIN_ID!,
+      infuraUrl: process.env.INFURA_URL!,
       checkBlockLagIntervalMultiplier:
         +process.env.CHECK_BLOCK_LAG_INTERVAL_MULTIPLIER!,
       blockLagThreshold: +process.env.BLOCK_LAG_THRESHOLD!,

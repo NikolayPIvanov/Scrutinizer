@@ -75,24 +75,24 @@ export class EvmApi implements IEvmApi {
       this.errorCount++;
     }
 
-    block.transactions = block.transactions.map((tx: any) => ({
-      ...tx,
-      gas: parseInt(tx.gas, 16),
-      nonce: parseInt(tx.nonce, 16),
-      blockNumber: parseInt(tx.blockNumber, 16),
-      transactionIndex: parseInt(tx.transactionIndex, 16),
-      logs: logs.filter(
-        (l: any) => l.transactionHash === tx.hash && l.removed === false
-      ),
-    }));
+    // block.transactions = block.transactions.map((tx: any) => ({
+    //   ...tx,
+    //   gas: parseInt(tx.gas, 16),
+    //   nonce: parseInt(tx.nonce, 16),
+    //   blockNumber: parseInt(tx.blockNumber, 16),
+    //   transactionIndex: parseInt(tx.transactionIndex, 16),
+    //   logs: logs.filter(
+    //     (l: any) => l.transactionHash === tx.hash && l.removed === false
+    //   ),
+    // }));
 
-    const relativeNativeTransfers = block.transactions.filter(
-      (t: any) => t.type !== '0x6a' && t.value !== '0x0' && t.logs.length === 0
-    );
+    // const relativeNativeTransfers = block.transactions.filter(
+    //   (t: any) => t.type !== '0x6a' && t.value !== '0x0' && t.logs.length === 0
+    // );
 
-    if (relativeNativeTransfers.length) {
-      block.native = relativeNativeTransfers;
-    }
+    // if (relativeNativeTransfers.length) {
+    //   block.native = relativeNativeTransfers;
+    // }
 
     return {
       ...block,
@@ -221,6 +221,7 @@ export class EvmApi implements IEvmApi {
             },
           },
         ]);
+
         this.logPerformance(startTime);
 
         return;
@@ -250,24 +251,31 @@ export class EvmApi implements IEvmApi {
   }
 
   private handleSingleError(json: {error?: {message?: string}}) {
+    let knownError = false;
+
     if (json.error?.message?.includes('usage limit')) {
       this.rateLimited++;
+      knownError = true;
     }
 
     if (json.error?.message?.includes('limit exceeded')) {
       this.rateLimited++;
+      knownError = true;
     }
     if (json.error?.message?.includes('reached')) {
       this.rateLimited++;
+      knownError = true;
     }
     if (json.error?.message?.includes('Too Many Requests')) {
       this.rateLimited++;
+      knownError = true;
     }
     if (json.error?.message?.includes('Unauthorized')) {
       this.rateLimited++;
+      knownError = true;
     }
 
-    if (json.error?.message) {
+    if (json.error?.message && !knownError) {
       throw new Error('RPC Error: ' + json.error.message);
     }
   }
@@ -294,7 +302,7 @@ export class EvmApi implements IEvmApi {
         this.requestTimes.reduce((sum, t) => sum + t, 0) /
           this.requestTimes.length || 0;
 
-      await this.storage.upsert({
+      this.storage.upsert({
         chainName: this.chainName,
         chainId: this.chainId,
         totalRequest: this.totalRequests,
