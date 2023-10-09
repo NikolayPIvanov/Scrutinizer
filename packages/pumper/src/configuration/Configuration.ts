@@ -38,6 +38,10 @@ export class Configuration implements IConfiguration {
       brokers: process.env.KAFKA_BROKERS?.split(',') || [],
       topics: {
         blocks: process.env.BLOCKS_TOPIC!,
+        fullBlock: process.env.FULL_BLOCKS_TOPIC!,
+      },
+      groups: {
+        fullBlock: process.env.FULL_BLOCKS_TOPIC_CONSUMER_GROUP!,
       },
     },
     network: {

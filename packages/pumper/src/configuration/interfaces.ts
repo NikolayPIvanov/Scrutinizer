@@ -2,10 +2,11 @@ export interface IKafkaConfiguration {
   clientId: string | undefined;
   brokers: string[];
   topics: ITopicsConfiguration;
+  groups: IGroupConfiguration;
 }
 
 export interface IGroupConfiguration {
-  blocks: string;
+  fullBlock: string;
 }
 export interface ITopicsConfiguration {
   blocks: string;

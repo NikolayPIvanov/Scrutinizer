@@ -2,6 +2,7 @@ import {injectable} from 'inversify';
 import {
   IConfiguration,
   IConfigurationValidationSchema,
+  IGroupConfiguration,
   IKafkaConfiguration,
   ILoggingConfiguration,
   INetworkConfiguration,
@@ -20,10 +21,15 @@ const topicsSchema = joi.object<ITopicsConfiguration>().keys({
   blocks: joi.string().required(),
 });
 
+const groupsSchema = joi.object<IGroupConfiguration>().keys({
+  fullBlock: joi.string().required(),
+});
+
 const kafkaSchema = joi.object<IKafkaConfiguration>().keys({
   clientId: joi.string().required(),
   brokers: joi.array().required().min(1),
   topics: topicsSchema,
+  groups: groupsSchema,
 });
 
 const networkSchema = joi.object<INetworkConfiguration>().keys({
