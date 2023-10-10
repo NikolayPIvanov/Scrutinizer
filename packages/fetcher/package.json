@@ -1,5 +1,5 @@
 {
-  "name": "pumper",
+  "name": "fetcher",
   "version": "0.0.1",
   "description": "",
   "main": "build/src/index.js",
