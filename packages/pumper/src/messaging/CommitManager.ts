@@ -26,10 +26,6 @@ export class CommitManager implements ICommitManager {
         this.commitProcessedOffsets();
       }, COMMIT_TIME_INTERVAL);
     }
-
-    this.kafkaConsumer.on(this.kafkaConsumer.events.COMMIT_OFFSETS, data => {
-      this.logger.info(`Commit  ${JSON.stringify(data)}`);
-    });
   }
 
   public notifyStartProcessing(data: any) {

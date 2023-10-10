@@ -84,7 +84,7 @@ export class CommitManager implements ICommitManager {
           this.partitionsData[key].splice(
             0,
             this.partitionsData[key].indexOf(lastProcessedRecord) + 1
-          ); // remove commited records from array
+          ); // remove committed records from array
           offsetsToCommit.push({
             partition: +key,
             offset: lastProcessedRecord.offset,

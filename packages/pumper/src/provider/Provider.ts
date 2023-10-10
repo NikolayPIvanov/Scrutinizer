@@ -52,6 +52,13 @@ export class Provider implements IProvider {
     private nodeStorageRepository: INodeStorageRepository
   ) {}
 
+  getBlock(
+    blockNumber: number,
+    forceFastestProvider?: boolean | undefined
+  ): Promise<any> {
+    throw new Error('Method not implemented.');
+  }
+
   public initialize = async (
     providerRpcConfiguration: ITransformedExtendedRpcInstance,
     lastCommitted = 0

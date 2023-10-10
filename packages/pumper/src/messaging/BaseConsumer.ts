@@ -102,10 +102,6 @@ export class BaseConsumer<T extends IExtendedKafkaMessage>
           highWaterOffset: batch.highWatermark,
         } as IExtendedKafkaMessage;
 
-        this.logger.info(
-          `message received from kafka,partition: ${extendedMessage.partition}, offset: ${extendedMessage.offset}`
-        );
-
         if (config.maxParallelHandles) {
           this.queue?.push(extendedMessage);
           if (

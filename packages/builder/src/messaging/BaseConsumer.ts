@@ -102,10 +102,6 @@ export class BaseConsumer<T extends IExtendedKafkaMessage>
           highWaterOffset: batch.highWatermark,
         } as IExtendedKafkaMessage;
 
-        this.logger.info(
-          `message received from kafka,partition: ${extendedMessage.partition}, offset: ${extendedMessage.offset}`
-        );
-
         if (config.maxParallelHandles) {
           this.queue?.push(extendedMessage);
           if (
@@ -150,7 +146,17 @@ export class BaseConsumer<T extends IExtendedKafkaMessage>
       this.logger.error(`Error handling message: ${error}`);
 
       data.headers = data.headers || {};
+      data.headers.retries = (+(data.headers.retries || 0) + 1).toString();
       data.headers.originalTopic = data.topic;
+
+      if (+data.headers.retries > 5) {
+        this.logger.error(
+          `Message exceeded retry limit: ${JSON.stringify(data)}`
+        );
+
+        return;
+      }
+
       const [, e] = await to(
         this.kafkaClient.producer.send({
           acks: 1,

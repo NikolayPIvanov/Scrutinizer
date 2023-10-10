@@ -32,4 +32,5 @@ export interface IProvider {
     providerRpcConfiguration: ITransformedExtendedRpcInstance,
     lastCommitted?: number
   ) => Promise<void>;
+  getFullBlock(blockNumber: number, forcedProvider?: IEvmApi): Promise<any>;
 }

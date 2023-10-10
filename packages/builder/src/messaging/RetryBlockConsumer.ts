@@ -35,6 +35,12 @@ export class RetryBlockConsumer implements IConsumerInstance {
   }
 
   public handle = async (message: IExtendedKafkaMessage) => {
+    const retries = +(message.headers?.retries?.toString() || 0);
+
+    setTimeout(async () => this.execute(message), retries * 1000);
+  };
+
+  private execute = async (message: IExtendedKafkaMessage) => {
     const raw = message.value?.toString();
     if (!raw) {
       return;
