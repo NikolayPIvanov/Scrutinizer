@@ -28,8 +28,12 @@ export interface INetworkConfiguration {
   maxRequestTime: number;
   refreshProvidersInterval: number;
 }
+export interface IRedisConfiguration {
+  url: string;
+}
 
 export interface IConfiguration {
+  redis: IRedisConfiguration;
   logging: ILoggingConfiguration;
   kafka: IKafkaConfiguration;
   network: INetworkConfiguration;

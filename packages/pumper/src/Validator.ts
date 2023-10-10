@@ -1,9 +1,10 @@
-import {inject, injectable} from 'inversify';
-import {IConfiguration} from './configuration';
-import {ILogger} from './logger';
-import {IKafkaClient} from './messaging';
-import {IProvider} from './provider/provider.interfaces';
-import {TYPES} from './types';
+import { inject, injectable } from 'inversify';
+import { IRedisClient } from './Redis';
+import { IConfiguration } from './configuration';
+import { ILogger } from './logger';
+import { IKafkaClient } from './messaging';
+import { IProvider } from './provider/provider.interfaces';
+import { TYPES } from './types';
 
 export interface IBlockRoot {
   number: number;
@@ -27,14 +28,17 @@ export class Validator implements IValidator {
     @inject(TYPES.ILogger) private logger: ILogger,
     @inject(TYPES.IKafkaClient) private kafkaClient: IKafkaClient,
     @inject(TYPES.IProvider) private provider: IProvider,
-    @inject(TYPES.IConfiguration) private configuration: IConfiguration
+    @inject(TYPES.IConfiguration) private configuration: IConfiguration,
+    @inject(TYPES.IRedisClient) private redis: IRedisClient
   ) {
     setInterval(async () => this.validate(), 5000);
-    setInterval(async () => this.validateOnChain(), 60000);
+    // setInterval(async () => this.validateOnChain(), 60000);
   }
 
-  push(root: IBlockRoot): void {
+  async push(root: IBlockRoot): Promise<void> {
     this.forks.delete(root.number);
+
+    await this.redis.hSet(root.number.toString(), root);
 
     if (this.uniqueRootsIndexes.has(root.number)) {
       const index = this.uniqueRootsIndexes.get(root.number)!;

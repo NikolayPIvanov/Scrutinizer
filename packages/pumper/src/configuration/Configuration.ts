@@ -7,6 +7,7 @@ import {
   IKafkaConfiguration,
   ILoggingConfiguration,
   INetworkConfiguration,
+  IRedisConfiguration,
 } from './interfaces';
 
 dotenv.config();
@@ -16,6 +17,7 @@ export class Configuration implements IConfiguration {
   logging: ILoggingConfiguration;
   kafka: IKafkaConfiguration;
   network: INetworkConfiguration;
+  redis: IRedisConfiguration;
 
   constructor(
     @inject(TYPES.IConfigurationValidationSchema)
@@ -27,6 +29,7 @@ export class Configuration implements IConfiguration {
     this.logging = configuration.logging;
     this.kafka = configuration.kafka;
     this.network = configuration.network;
+    this.redis = configuration.redis;
   }
 
   private getConfiguration = () => ({
@@ -55,6 +58,9 @@ export class Configuration implements IConfiguration {
       maxProviderCount: +process.env.MAX_PROVIDER_COUNT!,
       maxRequestTime: +process.env.MAX_REQUEST_TIME!,
       refreshProvidersInterval: +process.env.REFRESH_PROVIDERS_INTERVAL!,
+    },
+    redis: {
+      url: process.env.REDIS_URL!,
     },
   });
 }

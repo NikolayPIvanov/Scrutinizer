@@ -6,6 +6,7 @@ import {
   IKafkaConfiguration,
   ILoggingConfiguration,
   INetworkConfiguration,
+  IRedisConfiguration,
   ITopicsConfiguration,
 } from './interfaces';
 import joi = require('joi');
@@ -26,6 +27,10 @@ const topicsSchema = joi.object<ITopicsConfiguration>().keys({
 const groupsSchema = joi.object<IGroupConfiguration>().keys({
   fullBlock: joi.string().required(),
   retryFullBlock: joi.string().required(),
+});
+
+const redisSchema = joi.object<IRedisConfiguration>().keys({
+  url: joi.string().required(),
 });
 
 const kafkaSchema = joi.object<IKafkaConfiguration>().keys({
@@ -51,6 +56,7 @@ const configurationSchema = joi
     logging: loggingSchema,
     kafka: kafkaSchema,
     network: networkSchema,
+    redis: redisSchema,
   })
   .unknown();
 

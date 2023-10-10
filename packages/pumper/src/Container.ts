@@ -6,6 +6,7 @@ import {
   IConfigurationValidationSchema,
 } from './configuration';
 
+import {IRedisClient, Redis} from './Redis';
 import {IValidator, Validator} from './Validator';
 import {ILogger, Logger} from './logger';
 import {IKafkaClient, KafkaClient} from './messaging';
@@ -92,6 +93,8 @@ export class ContainerInstance extends Container {
     this.bind<IConsumerInstance>(TYPES.IConsumerInstance)
       .to(FullBlockRetryConsumer)
       .inSingletonScope();
+
+    this.bind<IRedisClient>(TYPES.IRedisClient).to(Redis).inSingletonScope();
 
     this.getAll(TYPES.IConsumerInstance);
     // const validator = this.get<IValidator>(TYPES.IValidator);

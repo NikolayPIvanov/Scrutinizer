@@ -162,8 +162,6 @@ export class Provider implements IProvider {
       if (validated[0]?.number) {
         return validated[0];
       }
-
-      console.log(success);
     } catch (error) {
       this.logger.error(error);
     }

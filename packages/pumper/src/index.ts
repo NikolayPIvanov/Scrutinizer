@@ -11,6 +11,7 @@ import {TYPES} from './types';
 
 import {bootstrap} from './ksql/KsqldbClient';
 import {getLatestCommittedBlockNumber} from './ksql/Queries';
+import {IRedisClient} from './Redis';
 
 (async () => {
   await bootstrap();
@@ -19,6 +20,9 @@ import {getLatestCommittedBlockNumber} from './ksql/Queries';
 
   const kafkaClient = container.get<IKafkaClient>(TYPES.IKafkaClient);
   await kafkaClient.bootstrap();
+
+  const redis = container.get<IRedisClient>(TYPES.IRedisClient);
+  await redis.connect();
 
   const nodeStorageRepository = container.get<INodeStorageRepository>(
     TYPES.INodeStorageRepository

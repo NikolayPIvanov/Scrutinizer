@@ -52,13 +52,6 @@ export class Provider implements IProvider {
     private nodeStorageRepository: INodeStorageRepository
   ) {}
 
-  getBlock(
-    blockNumber: number,
-    forceFastestProvider?: boolean | undefined
-  ): Promise<any> {
-    throw new Error('Method not implemented.');
-  }
-
   public initialize = async (
     providerRpcConfiguration: ITransformedExtendedRpcInstance,
     lastCommitted = 0
@@ -181,9 +174,11 @@ export class Provider implements IProvider {
       this.logger.error(error);
     }
 
-    throw new Error(
-      `No valid block found! Chain: ${this.providerRpcConfiguration?.name}, block: ${blockNumber}, latest: ${this.latestBlock}}`
+    this.logger.error(
+      `No valid block found! Chain: ${this.providerRpcConfiguration?.name}, block: ${blockNumber}`
     );
+
+    return null;
   }
 
   async calculateBlockLagAndLatestBlock() {

@@ -13,4 +13,5 @@ export const TYPES = {
   IConsumerInstance: Symbol('IConsumerInstance'),
   ICommitManager: Symbol('ICommitManager'),
   IValidator: Symbol('IValidator'),
+  IRedisClient: Symbol('IRedisClient'),
 };
