@@ -1,3 +1,4 @@
+import {injectable} from 'inversify';
 import {
   ICommitManager,
   IConsumerConfig,
@@ -8,6 +9,7 @@ import {
 
 const COMMIT_TIME_INTERVAL = 5000;
 
+@injectable()
 export class CommitManager implements ICommitManager {
   private partitionsData: Record<string, IPartitionMessage[]> = {};
   private partitionCallbacks: Record<string, IPartitionCallbackRegister> = {};

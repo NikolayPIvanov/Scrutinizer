@@ -1,11 +1,9 @@
-import {ClientOptions, IKsqldbClient} from './ksqldb.interfaces';
+import {injectable} from 'inversify';
+import {ClientOptions, IKsqldb, IKsqldbClient} from './ksqldb.interfaces';
 
 const KsqldbClient = require('ksqldb-client');
 
-export interface IKsqldb {
-  client: IKsqldbClient;
-}
-
+@injectable()
 export class Ksqldb implements IKsqldb {
   public client: IKsqldbClient = {} as IKsqldbClient;
 

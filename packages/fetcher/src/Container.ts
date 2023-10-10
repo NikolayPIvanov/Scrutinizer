@@ -6,19 +6,17 @@ import {
   IConfigurationValidationSchema,
 } from './configuration';
 
-import {IRedisClient, Redis} from './Redis';
 import {IValidator, Validator} from './Validator';
-import {ILogger, Logger} from './logger';
-import {IKafkaClient, KafkaClient} from './messaging';
-import {BaseConsumer} from './messaging/BaseConsumer';
-import {CommitManager} from './messaging/CommitManager';
+// import {IKafkaClient, KafkaClient} from './messaging';
+// import {BaseConsumer} from './messaging/BaseConsumer';
+// import {CommitManager} from './messaging/CommitManager';
 import {FullBlockConsumer} from './messaging/FullBlockConsumer';
 import {FullBlockRetryConsumer} from './messaging/FullBlockRetryConsumer';
-import {
-  ICommitManager,
-  IConsumer,
-  IConsumerInstance,
-} from './messaging/kafka.interfaces';
+// import {
+//   ICommitManager,
+//   IConsumer,
+//   IConsumerInstance,
+// } from './messaging/kafka.interfaces';
 import {NodeStorageRepository} from './provider/NodeStorageRepository';
 import {Provider} from './provider/Provider';
 import {ProviderConfigurationMerger} from './provider/ProviderConfigurationMerger';
@@ -35,6 +33,8 @@ import {
   IScrapper,
 } from './provider/scrapers/scraper.interfaces';
 import {TYPES} from './types';
+
+import {infrastructure} from 'scrutinizer-infrastructure';
 
 export class ContainerInstance extends Container {
   constructor() {
@@ -72,25 +72,33 @@ export class ContainerInstance extends Container {
 
     this.bind<IProvider>(TYPES.IProvider).to(Provider).inSingletonScope();
 
-    this.bind<IKafkaClient>(TYPES.IKafkaClient)
-      .to(KafkaClient)
-      .inSingletonScope();
-
-    this.bind<ILogger>(TYPES.ILogger).to(Logger).inSingletonScope();
-
     this.bind<IValidator>(TYPES.IValidator).to(Validator).inSingletonScope();
 
-    this.bind<IConsumer>(TYPES.IConsumer).to(BaseConsumer).inTransientScope();
+    this.bind<infrastructure.messaging.IKafkaClient>(TYPES.IKafkaClient)
+      .to(infrastructure.messaging.KafkaClient)
+      .inSingletonScope();
+
+    this.bind<infrastructure.logging.ILogger>(TYPES.ILogger)
+      .to(infrastructure.logging.Logger)
+      .inSingletonScope();
+
+    this.bind<infrastructure.messaging.IConsumerInstance>(TYPES.IConsumer)
+      .to(BaseConsumer)
+      .inTransientScope();
 
     this.bind<ICommitManager>(TYPES.ICommitManager)
       .to(CommitManager)
       .inSingletonScope();
 
-    this.bind<IConsumerInstance>(TYPES.IConsumerInstance)
+    this.bind<infrastructure.messaging.IConsumerInstance>(
+      TYPES.IConsumerInstance
+    )
       .to(FullBlockConsumer)
       .inSingletonScope();
 
-    this.bind<IConsumerInstance>(TYPES.IConsumerInstance)
+    this.bind<infrastructure.messaging.IConsumerInstance>(
+      TYPES.IConsumerInstance
+    )
       .to(FullBlockRetryConsumer)
       .inSingletonScope();
 

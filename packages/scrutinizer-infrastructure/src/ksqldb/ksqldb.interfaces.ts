@@ -1,5 +1,9 @@
 import {ClientSessionOptions, SecureClientSessionOptions} from 'http2';
 
+export interface IKsqldb {
+  client: IKsqldbClient;
+}
+
 export interface ClientOptionsAuthorizationSsl {
   ca: string;
   cert: string;

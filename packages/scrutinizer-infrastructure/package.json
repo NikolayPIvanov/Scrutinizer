@@ -20,7 +20,7 @@
     "posttest": "npm run lint"
   },
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=20.0.0"
   },
   "devDependencies": {
     "@types/async": "^3.2.21",
@@ -32,10 +32,12 @@
   "dependencies": {
     "async": "^3.2.4",
     "http2": "^3.3.7",
+    "inversify": "^6.0.1",
     "kafkajs": "^2.2.4",
     "ksqldb-client": "^1.0.5",
     "pino": "^8.16.0",
-    "redis": "^4.6.10"
+    "redis": "^4.6.10",
+    "reflect-metadata": "^0.1.13"
   },
   "husky": {
     "hooks": {

@@ -1,3 +1,4 @@
+import {injectable} from 'inversify';
 import {Admin, Kafka, Producer} from 'kafkajs';
 import {
   IConsumerConfiguration,
@@ -6,6 +7,7 @@ import {
   ISubscription,
 } from './kafka.interfaces';
 
+@injectable()
 export class KafkaClient implements IKafkaClient {
   private readonly kafka: Kafka;
   private readonly admin: Admin;

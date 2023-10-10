@@ -1,4 +1,5 @@
 import {QueueObject, queue} from 'async';
+import {injectable} from 'inversify';
 import {Batch, EachBatchPayload} from 'kafkajs';
 import {to} from '../../../common';
 import {ILogger} from '../../../logging';
@@ -11,6 +12,7 @@ import {
   IExtendedKafkaMessage,
 } from './consumers.interface';
 
+@injectable()
 export class BaseConsumer<T extends IExtendedKafkaMessage>
   implements IConsumerInstance
 {

@@ -1,6 +1,8 @@
+import {injectable} from 'inversify';
 import {RedisClientType, createClient} from 'redis';
 import {IRedisClient, IRedisConfiguration} from './redis.interfaces';
 
+@injectable()
 export class Redis implements IRedisClient {
   private readonly client: RedisClientType;
 

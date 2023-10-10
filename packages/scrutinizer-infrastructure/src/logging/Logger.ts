@@ -1,15 +1,8 @@
+import {injectable} from 'inversify';
 import pino from 'pino';
+import {ILogger, ILoggerConfiguration} from './logger.interfaces';
 
-export interface ILogger {
-  info: (...args: unknown[]) => void;
-  warn: (...args: unknown[]) => void;
-  error: (...args: unknown[]) => void;
-}
-
-export interface ILoggerConfiguration {
-  level?: string;
-}
-
+@injectable()
 export class Logger implements ILogger {
   private _logger: pino.Logger;
 

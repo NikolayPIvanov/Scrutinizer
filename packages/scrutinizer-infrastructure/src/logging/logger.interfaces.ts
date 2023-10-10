@@ -3,3 +3,7 @@ export interface ILogger {
   warn: (...args: unknown[]) => void;
   error: (...args: unknown[]) => void;
 }
+
+export interface ILoggerConfiguration {
+  level?: string;
+}
