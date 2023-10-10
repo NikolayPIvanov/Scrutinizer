@@ -26,6 +26,7 @@
     "@types/async": "^3.2.21",
     "@types/node": "20.8.2",
     "gts": "^5.2.0",
+    "husky": "^8.0.3",
     "typescript": "~5.2.0"
   },
   "dependencies": {
@@ -34,5 +35,10 @@
     "kafkajs": "^2.2.4",
     "ksqldb-client": "^1.0.5",
     "pino": "^8.16.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "gts check"
+    }
   }
 }
