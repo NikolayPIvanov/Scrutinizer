@@ -3,7 +3,7 @@ import axios, {AxiosInstance} from 'axios';
 import {inject, injectable} from 'inversify';
 import {to} from 'scrutinizer-infrastructure/build/src/common';
 import {ILogger} from 'scrutinizer-infrastructure/build/src/logging';
-import {TYPES} from '../../types';
+import {TYPES} from '../../injection/types';
 import {
   DEFI_LLAMA_GITHUB_BASE_URL,
   FALLBACK_RPC_GITHUB_RPC_URL,

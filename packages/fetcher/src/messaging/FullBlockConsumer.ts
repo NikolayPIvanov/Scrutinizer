@@ -3,9 +3,9 @@ import {inject, injectable} from 'inversify';
 import {infrastructure} from 'scrutinizer-infrastructure';
 // eslint-disable-next-line node/no-extraneous-import
 import {IExtendedKafkaMessage} from 'scrutinizer-infrastructure/build/src/messaging/kafka/consumers/consumers.interface';
-import {IValidator} from '../Validator';
 import {IConfiguration} from '../configuration/interfaces';
-import {TYPES} from '../types';
+import {TYPES} from '../injection/types';
+import {IValidator} from '../validators/Validator';
 
 @injectable()
 export class FullBlockConsumer extends infrastructure.messaging.BaseConsumer {

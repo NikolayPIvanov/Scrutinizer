@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 import {inject, injectable} from 'inversify';
-import {TYPES} from '../types';
+import {TYPES} from '../injection/types';
 import {
   IConfiguration,
   IConfigurationValidationSchema,

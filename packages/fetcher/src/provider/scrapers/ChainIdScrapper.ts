@@ -1,7 +1,7 @@
 /* eslint-disable node/no-extraneous-import */
 import axios, {AxiosInstance} from 'axios';
 import {inject, injectable} from 'inversify';
-import {TYPES} from '../../types';
+import {TYPES} from '../../injection/types';
 import {
   DEFI_LLAMA_GITHUB_BASE_URL,
   FALLBACK_GITHUB_RPC_URL,

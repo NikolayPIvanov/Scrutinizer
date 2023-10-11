@@ -4,40 +4,32 @@ import {
   ConfigurationValidationSchema,
   IConfiguration,
   IConfigurationValidationSchema,
-} from './configuration';
+} from '../configuration';
 
-import {IValidator, Validator} from './Validator';
-// import {IKafkaClient, KafkaClient} from './messaging';
-// import {BaseConsumer} from './messaging/BaseConsumer';
-// import {CommitManager} from './messaging/CommitManager';
-import {FullBlockConsumer} from './messaging/FullBlockConsumer';
-import {FullBlockRetryConsumer} from './messaging/FullBlockRetryConsumer';
-// import {
-//   ICommitManager,
-//   IConsumer,
-//   IConsumerInstance,
-// } from './messaging/kafka.interfaces';
-import {NodeStorageRepository} from './provider/NodeStorageRepository';
-import {Provider} from './provider/Provider';
-import {ProviderConfigurationMerger} from './provider/ProviderConfigurationMerger';
+import {FullBlockConsumer} from '../messaging/FullBlockConsumer';
+import {FullBlockRetryConsumer} from '../messaging/FullBlockRetryConsumer';
+import {NodeStorageRepository} from '../provider/NodeStorageRepository';
+import {Provider} from '../provider/Provider';
+import {ProviderConfigurationMerger} from '../provider/ProviderConfigurationMerger';
 import {
   INodeStorageRepository,
   IProvider,
   IProviderConfigurationMerger,
-} from './provider/provider.interfaces';
-import {ChainIdScrapper} from './provider/scrapers/ChainIdScrapper';
-import {ChainRpcScrapper} from './provider/scrapers/ChainRpcScrapper';
+} from '../provider/provider.interfaces';
+import {ChainIdScrapper} from '../provider/scrapers/ChainIdScrapper';
+import {ChainRpcScrapper} from '../provider/scrapers/ChainRpcScrapper';
 import {
   IChainIdNamePair,
   IChainRpcUrlPair,
   IScrapper,
-} from './provider/scrapers/scraper.interfaces';
+} from '../provider/scrapers/scraper.interfaces';
+import {IValidator, Validator} from '../validators/Validator';
 import {TYPES} from './types';
 
 // eslint-disable-next-line node/no-extraneous-import
 import {infrastructure} from 'scrutinizer-infrastructure';
-import {DbQueries} from './ksql/Queries';
-import {IDbQueries} from './ksql/ksql.interfaces';
+import {DbQueries} from '../ksql/Queries';
+import {IDbQueries} from '../ksql/ksql.interfaces';
 
 export class ContainerInstance extends Container {
   constructor() {

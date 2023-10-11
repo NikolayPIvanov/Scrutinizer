@@ -4,7 +4,7 @@ import {to} from 'scrutinizer-infrastructure/build/src/common';
 
 import {inject, injectable} from 'inversify';
 import {IConfiguration} from '../configuration';
-import {TYPES} from '../types';
+import {TYPES} from '../injection/types';
 import {EvmApi} from './EvmApi';
 import {
   IEvmApi,

@@ -2,9 +2,9 @@
 import {infrastructure} from 'scrutinizer-infrastructure';
 
 import {inject, injectable} from 'inversify';
-import {IConfiguration} from './configuration';
-import {IProvider} from './provider/provider.interfaces';
-import {TYPES} from './types';
+import {IConfiguration} from '../configuration';
+import {TYPES} from '../injection/types';
+import {IProvider} from '../provider/provider.interfaces';
 
 export interface IBlockRoot {
   number: number;

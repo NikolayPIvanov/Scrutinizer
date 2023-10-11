@@ -3,14 +3,14 @@ import {infrastructure} from 'scrutinizer-infrastructure';
 
 import 'reflect-metadata';
 
-import {ContainerInstance} from './Container';
+import {ContainerInstance} from './injection/Container';
+import {TYPES} from './injection/types';
 import {IDbQueries} from './ksql/ksql.interfaces';
 import {
   INodeStorageRepository,
   IProvider,
   IProviderConfigurationMerger,
 } from './provider/provider.interfaces';
-import {TYPES} from './types';
 
 (async () => {
   const container = new ContainerInstance();

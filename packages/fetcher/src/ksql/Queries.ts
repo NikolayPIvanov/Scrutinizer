@@ -1,7 +1,7 @@
 import {inject, injectable} from 'inversify';
 // eslint-disable-next-line node/no-extraneous-import
 import {infrastructure} from 'scrutinizer-infrastructure';
-import {TYPES} from '../types';
+import {TYPES} from '../injection/types';
 import {IDbQueries, ILastCommittedRow} from './ksql.interfaces';
 
 @injectable()
