@@ -1,9 +1,10 @@
+/* eslint-disable node/no-extraneous-import */
 import axios, {AxiosInstance} from 'axios';
 import {inject, injectable} from 'inversify';
-import {to} from '../../common';
+import {to} from 'scrutinizer-infrastructure/build/src/common';
+import {ILogger} from 'scrutinizer-infrastructure/build/src/logging';
 import {IConfiguration} from '../../configuration';
-import {ILogger} from '../../logger';
-import {TYPES} from '../../types';
+import {TYPES} from '../../injection/types';
 import {
   DEFI_LLAMA_GITHUB_BASE_URL,
   FALLBACK_RPC_GITHUB_RPC_URL,
@@ -72,12 +73,6 @@ export class ChainRpcScrapper implements IScrapper<IChainRpcUrlPair> {
 
     rpcList['137'].rpcs.push({
       url: 'https://polygon.llamarpc.com',
-      tracking: 'none',
-      trackingDetails: 'privacyStatement',
-    });
-
-    rpcList['42161'].rpcs.push({
-      url: this.configuration.network.infuraUrl,
       tracking: 'none',
       trackingDetails: 'privacyStatement',
     });

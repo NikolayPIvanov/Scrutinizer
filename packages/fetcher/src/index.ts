@@ -42,5 +42,5 @@ import {
   const latestCommittedBlockNumber =
     await dbQueries.getLatestCommittedBlockNumber();
 
-  provider.initialize(configuration, latestCommittedBlockNumber);
+  await provider.initialize(configuration, latestCommittedBlockNumber);
 })();

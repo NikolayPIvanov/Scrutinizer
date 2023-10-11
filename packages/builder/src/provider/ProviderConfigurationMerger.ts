@@ -1,6 +1,6 @@
 import {inject, injectable} from 'inversify';
 import {IConfiguration} from '../configuration';
-import {TYPES} from '../types';
+import {TYPES} from '../injection/types';
 import {IProviderConfigurationMerger} from './provider.interfaces';
 import {
   IChainIdNamePair,

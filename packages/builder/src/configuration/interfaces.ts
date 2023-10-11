@@ -17,8 +17,9 @@ export interface ITopicConfiguration {
 
 export interface ITopicsConfiguration {
   blocks: ITopicConfiguration;
-  retryBlocks: ITopicConfiguration;
-  fullBlock: ITopicConfiguration;
+  blocksRetry: ITopicConfiguration;
+  blocksDlq: ITopicConfiguration;
+  blocksFull: ITopicConfiguration;
 }
 
 export interface ILoggingConfiguration {
@@ -27,7 +28,6 @@ export interface ILoggingConfiguration {
 
 export interface INetworkConfiguration {
   chainId: number;
-  infuraUrl: string;
   checkBlockLagIntervalMultiplier: number;
   blockLagThreshold: number;
   blockTime: number;

@@ -25,8 +25,9 @@ const topicConfigurationSchema = joi.object<ITopicConfiguration>().keys({
 
 const topicsSchema = joi.object<ITopicsConfiguration>().keys({
   blocks: topicConfigurationSchema,
-  retryBlocks: topicConfigurationSchema,
-  fullBlock: topicConfigurationSchema,
+  blocksRetry: topicConfigurationSchema,
+  blocksDlq: topicConfigurationSchema,
+  blocksFull: topicConfigurationSchema,
 });
 
 const groupsSchema = joi.object<IGroupConfiguration>().keys({
@@ -43,7 +44,6 @@ const kafkaSchema = joi.object<IKafkaConfiguration>().keys({
 
 const networkSchema = joi.object<INetworkConfiguration>().keys({
   chainId: joi.number().required().min(1),
-  infuraUrl: joi.string().optional(),
   checkBlockLagIntervalMultiplier: joi.number().required().min(1).max(1000),
   blockLagThreshold: joi.number().required().min(1).max(1000),
   blockTime: joi.number().required().min(100).max(100000),

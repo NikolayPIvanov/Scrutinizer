@@ -1,18 +1,24 @@
+/* eslint-disable node/no-extraneous-import */
 import 'reflect-metadata';
 
-import {ContainerInstance} from './Container';
-import {IKafkaClient} from './messaging';
+import {infrastructure} from 'scrutinizer-infrastructure';
+import {ContainerInstance} from './injection/Container';
+import {TYPES} from './injection/types';
 import {
   INodeStorageRepository,
   IProvider,
   IProviderConfigurationMerger,
 } from './provider/provider.interfaces';
-import {TYPES} from './types';
 
 (async () => {
   const container = new ContainerInstance();
 
-  const kafkaClient = container.get<IKafkaClient>(TYPES.IKafkaClient);
+  const kafkaClient = container.get<infrastructure.messaging.IKafkaClient>(
+    TYPES.IKafkaClient
+  );
+
+  await kafkaClient.bootstrap();
+
   const nodeStorageRepository = container.get<INodeStorageRepository>(
     TYPES.INodeStorageRepository
   );
@@ -22,12 +28,10 @@ import {TYPES} from './types';
     );
   const provider = container.get<IProvider>(TYPES.IProvider);
 
-  await kafkaClient.bootstrap();
-
-  await Promise.allSettled([nodeStorageRepository.init()]);
+  await nodeStorageRepository.init();
 
   const providersConfiguration =
     await providerConfigurationMerger.mergeConfigurations();
 
-  provider.initialize(providersConfiguration);
+  await provider.initialize(providersConfiguration);
 })();

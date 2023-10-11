@@ -1,8 +1,9 @@
+/* eslint-disable node/no-extraneous-import */
 import {inject, injectable} from 'inversify';
-import {to} from '../common';
+import {to} from 'scrutinizer-infrastructure/build/src/common';
+import {ILogger} from 'scrutinizer-infrastructure/build/src/logging';
 import {IConfiguration} from '../configuration';
-import {ILogger} from '../logger';
-import {TYPES} from '../types';
+import {TYPES} from '../injection/types';
 import {EvmApi} from './EvmApi';
 import {
   IEvmApi,

@@ -1,46 +1,47 @@
+/* eslint-disable node/no-extraneous-import */
+
 import {inject, injectable} from 'inversify';
-import {to} from '../common';
+import {infrastructure} from 'scrutinizer-infrastructure';
+import {IExtendedKafkaMessage} from 'scrutinizer-infrastructure/build/src/messaging/kafka/consumers/consumers.interface';
 import {IConfiguration} from '../configuration/interfaces';
+import {TYPES} from '../injection/types';
 import {IProvider} from '../provider/provider.interfaces';
-import {TYPES} from '../types';
-import {
-  IConsumer,
-  IConsumerInstance,
-  IExtendedKafkaMessage,
-  IKafkaClient,
-} from './kafka.interfaces';
 
 @injectable()
-export class RetryBlockConsumer implements IConsumerInstance {
+export class RetryBlockConsumer extends infrastructure.messaging.BaseConsumer {
   constructor(
     @inject(TYPES.IProvider) private provider: IProvider,
-    @inject(TYPES.IKafkaClient) private kafkaClient: IKafkaClient,
     @inject(TYPES.IConfiguration) private configuration: IConfiguration,
-    @inject(TYPES.IConsumer) private consumer: IConsumer
+    @inject(TYPES.ILogger) logger: infrastructure.logging.ILogger,
+    @inject(TYPES.ICommitManager)
+    commitManager: infrastructure.messaging.ICommitManager,
+    @inject(TYPES.IKafkaClient)
+    kafkaClient: infrastructure.messaging.IKafkaClient
   ) {
-    this.consumer.initialize({
+    super(kafkaClient, commitManager, logger);
+
+    this.initialize({
       groupId: this.configuration.kafka.groups.blocksRetry,
-      topicsList: [this.configuration.kafka.topics.retryBlocks.name],
+      topics: [this.configuration.kafka.topics.blocksRetry.name],
       autoCommit: false,
-      config: {
-        maxBytesPerPartition: 1000000,
-        heartbeatInterval: 10000,
-        fromBeginning: true,
+      consumerConfiguration: {
         maxParallelHandles: 50,
         maxQueueSize: 50,
-        retryTopic: configuration.kafka.topics.retryBlocks.name,
+        maxBytesPerPartition: 1000000,
+        heartbeatInterval: 5000,
+        commitInterval: 5000,
+        autoCommit: false,
+        fromBeginning: true,
+        retryTopic: configuration.kafka.topics.blocksRetry.name,
+        retryThreshold: 3,
+        dlqTopic: configuration.kafka.topics.blocksDlq.name,
       },
-      onData: this.handle.bind(this),
+      onMessageHandler: this.handle.bind(this),
+      onErrorHandler: this.handleError.bind(this),
     });
   }
 
   public handle = async (message: IExtendedKafkaMessage) => {
-    const retries = +(message.headers?.retries?.toString() || 0);
-
-    setTimeout(async () => this.execute(message), retries * 1000);
-  };
-
-  private execute = async (message: IExtendedKafkaMessage) => {
     const raw = message.value?.toString();
     if (!raw) {
       return;
@@ -53,7 +54,7 @@ export class RetryBlockConsumer implements IConsumerInstance {
     }
 
     const lag = +message.highWaterOffset - +message.offset;
-    const forceFastestProvider = lag > 100;
+    const forceFastestProvider = lag > 10;
 
     const block = await this.provider.getBlock(
       blockNumber,
@@ -64,21 +65,23 @@ export class RetryBlockConsumer implements IConsumerInstance {
       throw new Error(`Block ${blockNumber} not found`);
     }
 
-    const [, error] = await to(
-      this.kafkaClient.producer.send({
-        acks: 1,
-        topic: this.configuration.kafka.topics.fullBlock.name,
-        messages: [
-          {
-            key: message.key,
-            value: JSON.stringify(block),
+    await this.kafkaClient.producer.send({
+      acks: 1,
+      topic: this.configuration.kafka.topics.blocksFull.name,
+      messages: [
+        {
+          key: message.key,
+          value: JSON.stringify(block),
+          headers: {
+            'x-origin': 'retry-block-consumer',
+            'x-original-message': `${message.topic}-${message.partition}-${message.offset}`,
           },
-        ],
-      })
-    );
+        },
+      ],
+    });
+  };
 
-    if (error) {
-      console.log(error);
-    }
+  private handleError = (error: unknown) => {
+    this.logger.error(error);
   };
 }

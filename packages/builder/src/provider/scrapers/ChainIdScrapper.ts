@@ -1,14 +1,15 @@
+/* eslint-disable node/no-extraneous-import */
 import axios, {AxiosInstance} from 'axios';
 import {inject, injectable} from 'inversify';
-import {to} from '../../common';
-import {TYPES} from '../../types';
 import {
   DEFI_LLAMA_GITHUB_BASE_URL,
   FALLBACK_GITHUB_RPC_URL,
   MAIN_GITHUB_RPC_URL,
 } from './scarper.constants';
 
-import {ILogger} from '../../logger';
+import {to} from 'scrutinizer-infrastructure/build/src/common';
+import {ILogger} from 'scrutinizer-infrastructure/build/src/logging';
+import {TYPES} from '../../injection/types';
 import {IChainIdNamePair, IScrapper} from './scraper.interfaces';
 
 @injectable()

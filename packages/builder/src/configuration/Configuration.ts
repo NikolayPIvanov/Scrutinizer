@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 import {inject, injectable} from 'inversify';
-import {TYPES} from '../types';
+import {TYPES} from '../injection/types';
 import {
   IConfiguration,
   IConfigurationValidationSchema,
@@ -45,11 +45,17 @@ export class Configuration implements IConfiguration {
             +process.env.BLOCKS_TOPIC_MAX_BYTES_PER_PARTITION! ||
             DEFAULT_MAX_BYTES_PER_PARTITION,
         },
-        retryBlocks: {
+        blocksRetry: {
           name: process.env.RETRY_BLOCKS_TOPIC_NAME!,
         },
-        fullBlock: {
+        blocksDlq: {
+          name: process.env.DLQ_BLOCKS_TOPIC_NAME!,
+        },
+        blocksFull: {
           name: process.env.FULL_BLOCKS_TOPIC!,
+          maxBytesPerPartition:
+            +process.env.BLOCKS_TOPIC_MAX_BYTES_PER_PARTITION! ||
+            DEFAULT_MAX_BYTES_PER_PARTITION * 10,
         },
       },
       groups: {
@@ -59,7 +65,6 @@ export class Configuration implements IConfiguration {
     },
     network: {
       chainId: +process.env.CHAIN_ID!,
-      infuraUrl: process.env.INFURA_URL!,
       checkBlockLagIntervalMultiplier:
         +process.env.CHECK_BLOCK_LAG_INTERVAL_MULTIPLIER!,
       blockLagThreshold: +process.env.BLOCK_LAG_THRESHOLD!,

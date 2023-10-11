@@ -187,17 +187,12 @@ export class BaseConsumer implements IConsumerInstance {
 
       this.commitManager.notifyStartProcessing(extendedKafkaMessage);
       const [, error] = await to(handler(extendedKafkaMessage));
-      if (!error) {
-        return;
-      }
-
-      if (this.onErrorHandler) {
+      if (error && this.onErrorHandler) {
         this.onErrorHandler(error);
+        this.logger.error(`Error handling message: ${error}`);
+
+        await this.retryMessage(extendedKafkaMessage, configuration);
       }
-
-      this.logger.error(`Error handling message: ${error}`);
-
-      await this.retryMessage(extendedKafkaMessage, configuration);
     } finally {
       this.commitManager.notifyFinishedProcessing(extendedKafkaMessage);
     }
