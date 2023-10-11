@@ -215,7 +215,6 @@ export class BaseConsumer implements IConsumerInstance {
 
       return to(
         this.kafkaClient.producer.send({
-          acks: 1,
           topic: configuration.dlqTopic,
           messages: [extendedKafkaMessage],
         })
@@ -224,7 +223,6 @@ export class BaseConsumer implements IConsumerInstance {
 
     const [, error] = await to(
       this.kafkaClient.producer.send({
-        acks: 1,
         topic: configuration.retryTopic,
         messages: [extendedKafkaMessage],
       })

@@ -66,7 +66,6 @@ export class RetryBlockConsumer extends infrastructure.messaging.BaseConsumer {
     }
 
     await this.kafkaClient.producer.send({
-      acks: 1,
       topic: this.configuration.kafka.topics.blocksFull.name,
       messages: [
         {

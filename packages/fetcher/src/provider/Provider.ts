@@ -255,7 +255,6 @@ export class Provider implements IProvider {
 
   private sendBlockNumbersToKafka = async (blocks: number[]) => {
     await this.kafkaClient.producer.sendBatch({
-      acks: 1,
       compression: 0,
       topicMessages: [
         {

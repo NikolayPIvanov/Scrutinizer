@@ -120,7 +120,6 @@ export class Validator implements IValidator {
 
   private sendBlockNumbersToKafka = async (blocks: number[]) => {
     await this.kafkaClient.producer.sendBatch({
-      acks: 1,
       compression: 0,
       topicMessages: [
         {

@@ -45,13 +45,12 @@ export class NextBlockConsumer extends infrastructure.messaging.BaseConsumer {
   public handle = async (message: IExtendedKafkaMessage) => {
     const raw = message.value?.toString();
     if (!raw) {
-      return;
+      throw new Error('Message value is empty');
     }
 
     const {blockNumber} = JSON.parse(raw);
-
     if (Number.isNaN(blockNumber)) {
-      return;
+      throw new Error(`Block number is not a number: ${blockNumber}`);
     }
 
     const lag = +message.highWaterOffset - +message.offset;
@@ -82,7 +81,6 @@ export class NextBlockConsumer extends infrastructure.messaging.BaseConsumer {
     );
 
     await this.kafkaClient.producer.send({
-      acks: 1,
       topic: this.configuration.kafka.topics.blocksFull.name,
       messages: [
         {
