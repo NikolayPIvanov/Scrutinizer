@@ -5,6 +5,7 @@ import {
   IConfiguration,
   IConfigurationValidationSchema,
   IKafkaConfiguration,
+  IKsqlConfiguration,
   ILoggingConfiguration,
   INetworkConfiguration,
   IRedisConfiguration,
@@ -30,7 +31,9 @@ export class Configuration implements IConfiguration {
     this.kafka = configuration.kafka;
     this.network = configuration.network;
     this.redis = configuration.redis;
+    this.ksql = configuration.ksql;
   }
+  ksql: IKsqlConfiguration;
 
   private getConfiguration = () => ({
     logging: {
@@ -43,6 +46,7 @@ export class Configuration implements IConfiguration {
         blocks: process.env.BLOCKS_TOPIC!,
         fullBlock: process.env.FULL_BLOCKS_TOPIC!,
         fullBlockRetry: process.env.FULL_RETRY_BLOCKS_TOPIC!,
+        fullBlockDlq: process.env.FULL_DLQ_BLOCKS_TOPIC!,
       },
       groups: {
         fullBlock: process.env.FULL_BLOCKS_TOPIC_CONSUMER_GROUP!,
@@ -61,6 +65,10 @@ export class Configuration implements IConfiguration {
     },
     redis: {
       url: process.env.REDIS_URL!,
+    },
+    ksql: {
+      host: process.env.KSQL_HOST || 'http://localhost',
+      port: +(process.env.KSQL_PORT || 8088),
     },
   });
 }

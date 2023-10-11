@@ -13,9 +13,7 @@ import {
 } from './consumers.interface';
 
 @injectable()
-export class BaseConsumer<T extends IExtendedKafkaMessage>
-  implements IConsumerInstance
-{
+export class BaseConsumer implements IConsumerInstance {
   private ready = false;
   private paused = false;
 
@@ -24,12 +22,12 @@ export class BaseConsumer<T extends IExtendedKafkaMessage>
   private onMessageHandler?: (data: IExtendedKafkaMessage) => Promise<void>;
   private onErrorHandler?: (error: unknown) => void;
   private autoCommit = false;
-  private queue?: QueueObject<unknown>;
+  private queue?: QueueObject<IExtendedKafkaMessage>;
 
   constructor(
-    private kafkaClient: IKafkaClient,
-    private commitManager: ICommitManager,
-    private logger: ILogger
+    protected kafkaClient: IKafkaClient,
+    protected commitManager: ICommitManager,
+    protected logger: ILogger
   ) {}
 
   public initialize = async (
@@ -165,7 +163,7 @@ export class BaseConsumer<T extends IExtendedKafkaMessage>
       return;
     }
 
-    this.queue = queue(async (data: T, onFinished) => {
+    this.queue = queue(async (data: IExtendedKafkaMessage, onFinished) => {
       await this.handleCallback(
         data,
         bootstrapConfiguration.consumerConfiguration,

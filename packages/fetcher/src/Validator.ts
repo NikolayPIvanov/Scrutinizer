@@ -1,10 +1,10 @@
-import { inject, injectable } from 'inversify';
-import { IRedisClient } from './Redis';
-import { IConfiguration } from './configuration';
-import { ILogger } from './logger';
-import { IKafkaClient } from './messaging';
-import { IProvider } from './provider/provider.interfaces';
-import { TYPES } from './types';
+// eslint-disable-next-line node/no-extraneous-import
+import {infrastructure} from 'scrutinizer-infrastructure';
+
+import {inject, injectable} from 'inversify';
+import {IConfiguration} from './configuration';
+import {IProvider} from './provider/provider.interfaces';
+import {TYPES} from './types';
 
 export interface IBlockRoot {
   number: number;
@@ -25,11 +25,13 @@ export class Validator implements IValidator {
   private blocksCache: Map<number, any> = new Map();
 
   constructor(
-    @inject(TYPES.ILogger) private logger: ILogger,
-    @inject(TYPES.IKafkaClient) private kafkaClient: IKafkaClient,
+    @inject(TYPES.ILogger) private logger: infrastructure.logging.ILogger,
+    @inject(TYPES.IKafkaClient)
+    private kafkaClient: infrastructure.messaging.IKafkaClient,
     @inject(TYPES.IProvider) private provider: IProvider,
     @inject(TYPES.IConfiguration) private configuration: IConfiguration,
-    @inject(TYPES.IRedisClient) private redis: IRedisClient
+    @inject(TYPES.IRedisClient)
+    private redis: infrastructure.caching.redis.IRedisClient
   ) {
     setInterval(async () => this.validate(), 5000);
     // setInterval(async () => this.validateOnChain(), 60000);

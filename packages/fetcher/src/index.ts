@@ -1,7 +1,10 @@
+// eslint-disable-next-line node/no-extraneous-import
+import {infrastructure} from 'scrutinizer-infrastructure';
+
 import 'reflect-metadata';
 
 import {ContainerInstance} from './Container';
-import {IKafkaClient} from './messaging';
+import {IDbQueries} from './ksql/ksql.interfaces';
 import {
   INodeStorageRepository,
   IProvider,
@@ -9,35 +12,35 @@ import {
 } from './provider/provider.interfaces';
 import {TYPES} from './types';
 
-import {bootstrap} from './ksql/KsqldbClient';
-import {getLatestCommittedBlockNumber} from './ksql/Queries';
-import {IRedisClient} from './Redis';
-
 (async () => {
-  await bootstrap();
-
   const container = new ContainerInstance();
+  const kafkaClient = container.get<infrastructure.messaging.IKafkaClient>(
+    TYPES.IKafkaClient
+  );
+  const ksqldb = container.get<infrastructure.ksql.IKsqldb>(TYPES.IKsqlDb);
+  const dbQueries = container.get<IDbQueries>(TYPES.IDbQueries);
+  const redis = container.get<infrastructure.caching.redis.IRedisClient>(
+    TYPES.IRedisClient
+  );
 
-  const kafkaClient = container.get<IKafkaClient>(TYPES.IKafkaClient);
   await kafkaClient.bootstrap();
-
-  const redis = container.get<IRedisClient>(TYPES.IRedisClient);
+  await ksqldb.client.connect();
   await redis.connect();
 
   const nodeStorageRepository = container.get<INodeStorageRepository>(
     TYPES.INodeStorageRepository
   );
-  await nodeStorageRepository.init();
-
   const providerConfigurationMerger =
     container.get<IProviderConfigurationMerger>(
       TYPES.IProviderConfigurationMerger
     );
+  const provider = container.get<IProvider>(TYPES.IProvider);
+
+  await nodeStorageRepository.init();
   const configuration = await providerConfigurationMerger.mergeConfigurations();
 
-  const latestCommittedBlockNumber = await getLatestCommittedBlockNumber();
+  const latestCommittedBlockNumber =
+    await dbQueries.getLatestCommittedBlockNumber();
 
-  console.log('latestCommittedBlockNumber', latestCommittedBlockNumber);
-  const provider = container.get<IProvider>(TYPES.IProvider);
   provider.initialize(configuration, latestCommittedBlockNumber);
 })();

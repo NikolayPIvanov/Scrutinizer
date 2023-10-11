@@ -1,8 +1,9 @@
+/* eslint-disable node/no-extraneous-import */
+import {infrastructure} from 'scrutinizer-infrastructure';
+import {to} from 'scrutinizer-infrastructure/build/src/common';
+
 import {inject, injectable} from 'inversify';
-import {to} from '../common';
 import {IConfiguration} from '../configuration';
-import {ILogger} from '../logger';
-import {IKafkaClient} from '../messaging';
 import {TYPES} from '../types';
 import {EvmApi} from './EvmApi';
 import {
@@ -45,9 +46,10 @@ export class Provider implements IProvider {
   private lastCommitted: number | undefined;
 
   constructor(
-    @inject(TYPES.ILogger) private logger: ILogger,
+    @inject(TYPES.ILogger) private logger: infrastructure.logging.ILogger,
     @inject(TYPES.IConfiguration) private configuration: IConfiguration,
-    @inject(TYPES.IKafkaClient) private kafkaClient: IKafkaClient,
+    @inject(TYPES.IKafkaClient)
+    private kafkaClient: infrastructure.messaging.IKafkaClient,
     @inject(TYPES.INodeStorageRepository)
     private nodeStorageRepository: INodeStorageRepository
   ) {}

@@ -1,4 +1,4 @@
-import {Container} from 'inversify';
+import {Container, interfaces} from 'inversify';
 import {
   Configuration,
   ConfigurationValidationSchema,
@@ -34,7 +34,10 @@ import {
 } from './provider/scrapers/scraper.interfaces';
 import {TYPES} from './types';
 
+// eslint-disable-next-line node/no-extraneous-import
 import {infrastructure} from 'scrutinizer-infrastructure';
+import {DbQueries} from './ksql/Queries';
+import {IDbQueries} from './ksql/ksql.interfaces';
 
 export class ContainerInstance extends Container {
   constructor() {
@@ -75,19 +78,27 @@ export class ContainerInstance extends Container {
     this.bind<IValidator>(TYPES.IValidator).to(Validator).inSingletonScope();
 
     this.bind<infrastructure.messaging.IKafkaClient>(TYPES.IKafkaClient)
-      .to(infrastructure.messaging.KafkaClient)
+      .toDynamicValue((context: interfaces.Context) => {
+        const configuration = context.container.get<IConfiguration>(
+          TYPES.IConfiguration
+        );
+
+        return new infrastructure.messaging.KafkaClient(configuration.kafka);
+      })
       .inSingletonScope();
 
     this.bind<infrastructure.logging.ILogger>(TYPES.ILogger)
-      .to(infrastructure.logging.Logger)
+      .toDynamicValue((context: interfaces.Context) => {
+        const configuration = context.container.get<IConfiguration>(
+          TYPES.IConfiguration
+        );
+
+        return new infrastructure.logging.Logger(configuration.logging);
+      })
       .inSingletonScope();
 
-    this.bind<infrastructure.messaging.IConsumerInstance>(TYPES.IConsumer)
-      .to(BaseConsumer)
-      .inTransientScope();
-
-    this.bind<ICommitManager>(TYPES.ICommitManager)
-      .to(CommitManager)
+    this.bind<infrastructure.messaging.ICommitManager>(TYPES.ICommitManager)
+      .toDynamicValue(() => new infrastructure.messaging.CommitManager())
       .inSingletonScope();
 
     this.bind<infrastructure.messaging.IConsumerInstance>(
@@ -102,10 +113,28 @@ export class ContainerInstance extends Container {
       .to(FullBlockRetryConsumer)
       .inSingletonScope();
 
-    this.bind<IRedisClient>(TYPES.IRedisClient).to(Redis).inSingletonScope();
+    this.bind<infrastructure.caching.redis.IRedisClient>(TYPES.IRedisClient)
+      .toDynamicValue((context: interfaces.Context) => {
+        const configuration = context.container.get<IConfiguration>(
+          TYPES.IConfiguration
+        );
+
+        return new infrastructure.caching.redis.Redis(configuration.redis);
+      })
+      .inSingletonScope();
+
+    this.bind<infrastructure.ksql.IKsqldb>(TYPES.IKsqlDb)
+      .toDynamicValue((context: interfaces.Context) => {
+        const configuration = context.container.get<IConfiguration>(
+          TYPES.IConfiguration
+        );
+
+        return new infrastructure.ksql.Ksqldb(configuration.ksql);
+      })
+      .inSingletonScope();
+
+    this.bind<IDbQueries>(TYPES.IDbQueries).to(DbQueries).inSingletonScope();
 
     this.getAll(TYPES.IConsumerInstance);
-    // const validator = this.get<IValidator>(TYPES.IValidator);
-    // setInterval(async () => validator.validate(), 5000);
   }
 }

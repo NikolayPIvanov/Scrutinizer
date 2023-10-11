@@ -13,6 +13,7 @@ export interface ITopicsConfiguration {
   blocks: string;
   fullBlock: string;
   fullBlockRetry: string;
+  fullBlockDlq: string;
 }
 
 export interface ILoggingConfiguration {
@@ -28,8 +29,14 @@ export interface INetworkConfiguration {
   maxRequestTime: number;
   refreshProvidersInterval: number;
 }
+
 export interface IRedisConfiguration {
   url: string;
+}
+
+export interface IKsqlConfiguration {
+  host: string;
+  port: number;
 }
 
 export interface IConfiguration {
@@ -37,6 +44,7 @@ export interface IConfiguration {
   logging: ILoggingConfiguration;
   kafka: IKafkaConfiguration;
   network: INetworkConfiguration;
+  ksql: IKsqlConfiguration;
 }
 
 export interface IConfigurationValidationSchema {

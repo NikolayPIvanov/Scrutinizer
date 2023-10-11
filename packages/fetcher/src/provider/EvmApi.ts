@@ -1,5 +1,6 @@
+/* eslint-disable node/no-extraneous-import */
 import axios from 'axios';
-import {to} from '../common';
+import {to} from 'scrutinizer-infrastructure/build/src/common';
 import {IEvmApi, INodeStorageRepository} from './provider.interfaces';
 import {requestPromisesWithTimeout} from './utils';
 

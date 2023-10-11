@@ -4,6 +4,7 @@ import {
   IConfigurationValidationSchema,
   IGroupConfiguration,
   IKafkaConfiguration,
+  IKsqlConfiguration,
   ILoggingConfiguration,
   INetworkConfiguration,
   IRedisConfiguration,
@@ -22,6 +23,7 @@ const topicsSchema = joi.object<ITopicsConfiguration>().keys({
   blocks: joi.string().required(),
   fullBlock: joi.string().required(),
   fullBlockRetry: joi.string().required(),
+  fullBlockDlq: joi.string().required(),
 });
 
 const groupsSchema = joi.object<IGroupConfiguration>().keys({
@@ -31,6 +33,11 @@ const groupsSchema = joi.object<IGroupConfiguration>().keys({
 
 const redisSchema = joi.object<IRedisConfiguration>().keys({
   url: joi.string().required(),
+});
+
+const ksqlDbSchema = joi.object<IKsqlConfiguration>().keys({
+  host: joi.string().required(),
+  port: joi.number().required(),
 });
 
 const kafkaSchema = joi.object<IKafkaConfiguration>().keys({
@@ -57,6 +64,7 @@ const configurationSchema = joi
     kafka: kafkaSchema,
     network: networkSchema,
     redis: redisSchema,
+    ksql: ksqlDbSchema,
   })
   .unknown();
 

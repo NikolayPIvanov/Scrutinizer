@@ -14,4 +14,6 @@ export const TYPES = {
   ICommitManager: Symbol('ICommitManager'),
   IValidator: Symbol('IValidator'),
   IRedisClient: Symbol('IRedisClient'),
+  IKsqlDb: Symbol('IKsqlDb'),
+  IDbQueries: Symbol('IDbQueries'),
 };
