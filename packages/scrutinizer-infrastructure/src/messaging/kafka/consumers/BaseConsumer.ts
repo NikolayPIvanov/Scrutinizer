@@ -1,6 +1,7 @@
 import {QueueObject, queue} from 'async';
 import {injectable} from 'inversify';
 import {Batch, CompressionTypes, EachBatchPayload} from 'kafkajs';
+import {IRedisClient} from '../../../caching/redis';
 import {to} from '../../../common';
 import {ILogger} from '../../../logging';
 import {IConsumer, IKafkaClient} from '../kafka.interfaces';
@@ -11,6 +12,8 @@ import {
   IConsumerInstance,
   IExtendedKafkaMessage,
 } from './consumers.interface';
+
+const KEY_VALUE = '1';
 
 @injectable()
 export class BaseConsumer implements IConsumerInstance {
@@ -27,8 +30,17 @@ export class BaseConsumer implements IConsumerInstance {
   constructor(
     protected kafkaClient: IKafkaClient,
     protected commitManager: ICommitManager,
-    protected logger: ILogger
-  ) {}
+    protected logger: ILogger,
+    protected redis: IRedisClient
+  ) {
+    this.commitManager.onRecordRemoved(
+      async (message: IExtendedKafkaMessage) => {
+        await this.redis.del([
+          `${message.topic}:${message.partition}:${message.offset}`,
+        ]);
+      }
+    );
+  }
 
   public initialize = async (
     bootstrapConfiguration: IConsumerBootstrapConfiguration
@@ -183,12 +195,9 @@ export class BaseConsumer implements IConsumerInstance {
     configuration: IConsumerConfiguration,
     handler?: (message: IExtendedKafkaMessage) => Promise<void>
   ) {
-    const message = this.commitManager.findMessage(
-      extendedKafkaMessage.partition,
-      extendedKafkaMessage.offset
-    );
-
-    if (message) {
+    const key = `${extendedKafkaMessage.topic}:${extendedKafkaMessage.partition}:${extendedKafkaMessage.offset}`;
+    const value = await this.redis.get(key);
+    if (value) {
       return;
     }
 
@@ -198,9 +207,12 @@ export class BaseConsumer implements IConsumerInstance {
       }
 
       this.commitManager.notifyStartProcessing(extendedKafkaMessage);
+      await this.redis.set(key, KEY_VALUE);
+
       const [, error] = await to(handler(extendedKafkaMessage));
       if (error && this.onErrorHandler) {
         this.onErrorHandler(error);
+        await this.redis.del([key]);
         await this.retryMessage(extendedKafkaMessage, configuration);
       }
     } finally {

@@ -22,6 +22,7 @@ import {
   const redis = container.get<infrastructure.caching.redis.IRedisClient>(
     TYPES.IRedisClient
   );
+  const logger = container.get<infrastructure.logging.ILogger>(TYPES.ILogger);
 
   await kafkaClient.bootstrap();
   await ksqldb.client.connect();
@@ -41,6 +42,8 @@ import {
 
   const latestCommittedBlockNumber =
     await dbQueries.getLatestCommittedBlockNumber();
+  // const cacheLastCommittedBlockNumber = await redis.get('lastCommittedBlockNumber')
+  logger.info(latestCommittedBlockNumber, 'latestCommittedBlockNumber');
 
   await provider.initialize(configuration, latestCommittedBlockNumber);
 })();

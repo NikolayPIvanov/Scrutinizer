@@ -6,14 +6,23 @@ import {
   IPartitionCallbackRegister,
   IPartitionMessage,
 } from './consumers.interface';
+import EventEmitter = require('events');
 
 const COMMIT_TIME_INTERVAL = 5000;
+const RECORD_REMOVED = 'recordRemoved';
 
 @injectable()
 export class CommitManager implements ICommitManager {
   private partitionsData: Record<string, IPartitionMessage[]> = {};
   private partitionCallbacks: Record<string, IPartitionCallbackRegister> = {};
   private commitInterval: number = COMMIT_TIME_INTERVAL;
+  private emitter = new EventEmitter();
+
+  public onRecordRemoved(
+    callback: (message: IExtendedKafkaMessage) => Promise<void>
+  ) {
+    this.emitter.on(RECORD_REMOVED, callback);
+  }
 
   public start(consumerConfiguration: IConsumerConfig) {
     this.commitInterval =
@@ -61,16 +70,6 @@ export class CommitManager implements ICommitManager {
     record.done = true;
   }
 
-  public findMessage(
-    partition: number,
-    offset: string
-  ): IPartitionMessage | undefined {
-    this.partitionsData[partition] = this.partitionsData[partition] || [];
-    return this.partitionsData[partition].find(
-      (record: IPartitionMessage) => record.offset === offset
-    );
-  }
-
   public async commitProcessedOffsets() {
     await Promise.all(
       Object.keys(this.partitionsData).map(async key => {
@@ -78,12 +77,14 @@ export class CommitManager implements ICommitManager {
 
         await this.partitionCallbacks[partition].heartbeat();
 
-        const data = [...this.partitionsData[key]];
-
         const {npi, pi} = this.getLastProcessedAndFirstUnprocessedIndexes(key);
 
         const lastProcessedRecord =
-          npi > 0 ? data[npi - 1] : pi > -1 ? data[data.length - 1] : null;
+          npi > 0
+            ? this.partitionsData[key][npi - 1]
+            : pi > -1
+            ? this.partitionsData[key][this.partitionsData[key].length - 1]
+            : null;
 
         if (lastProcessedRecord) {
           if (!this.isRunning(partition)) return;
@@ -94,7 +95,12 @@ export class CommitManager implements ICommitManager {
 
           await this.partitionCallbacks[partition].commitOffsetsIfNecessary();
 
-          data.splice(0, data.indexOf(lastProcessedRecord) + 1); // remove committed records from array
+          const removed = this.partitionsData[key].splice(
+            0,
+            this.partitionsData[key].indexOf(lastProcessedRecord) + 1
+          ); // remove committed records from array
+
+          removed.forEach(record => this.emitter.emit(RECORD_REMOVED, record));
         }
       })
     );

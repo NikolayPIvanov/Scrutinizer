@@ -87,6 +87,16 @@ export class ContainerInstance extends Container {
       })
       .inSingletonScope();
 
+    this.bind<infrastructure.caching.redis.IRedisClient>(TYPES.IRedisClient)
+      .toDynamicValue((context: interfaces.Context) => {
+        const configuration = context.container.get<IConfiguration>(
+          TYPES.IConfiguration
+        );
+
+        return new infrastructure.caching.redis.Redis(configuration.redis);
+      })
+      .inSingletonScope();
+
     this.bind<infrastructure.messaging.ICommitManager>(TYPES.ICommitManager)
       .toDynamicValue(() => new infrastructure.messaging.CommitManager())
       .inSingletonScope();

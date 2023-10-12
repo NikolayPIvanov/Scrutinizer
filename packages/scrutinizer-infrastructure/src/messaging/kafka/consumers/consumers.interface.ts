@@ -37,12 +37,14 @@ export interface IConsumerConfig {
 }
 
 export interface ICommitManager {
+  onRecordRemoved: (
+    callback: (message: IExtendedKafkaMessage) => Promise<void>
+  ) => void;
   start: (consumerConfiguration: IConsumerConfig) => void;
   notifyStartProcessing: (message: IExtendedKafkaMessage) => void;
   notifyFinishedProcessing: (message: IExtendedKafkaMessage) => void;
   commitProcessedOffsets: () => Promise<void>;
   setPartitionCallbacks: (register: IPartitionCallbackRegister) => void;
-  findMessage(partition: number, offset: string): IPartitionMessage | undefined;
 }
 
 export interface IPartitionMessage {

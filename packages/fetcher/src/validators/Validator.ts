@@ -1,11 +1,9 @@
 // eslint-disable-next-line node/no-extraneous-import
-import { infrastructure } from 'scrutinizer-infrastructure';
-
-import { inject, injectable } from 'inversify';
-// eslint-disable-next-line node/no-extraneous-import
-import { CompressionTypes } from 'kafkajs';
-import { IConfiguration } from '../configuration';
-import { TYPES } from '../injection/types';
+import {inject, injectable} from 'inversify';
+import {CompressionTypes} from 'kafkajs';
+import {infrastructure} from 'scrutinizer-infrastructure';
+import {IConfiguration} from '../configuration';
+import {TYPES} from '../injection/types';
 
 export interface IBlockRoot {
   number: number;
@@ -80,16 +78,16 @@ export class Validator implements IValidator {
     }
 
     // These are the valid chain at the beginning of the list.
-    const confirmedBlocks = await this.detectConfirmed(
-      consecutiveBlocksAtStart,
-      blocks
-    );
+    // const confirmedBlocks = await this.detectConfirmed(
+    //   consecutiveBlocksAtStart,
+    //   blocks
+    // );
 
     if (forks.length > 0) {
       this.logger.info(`Forks: ${forks.join(', ')}`);
     }
 
-    await this.sendBlockNumbersToKafka(forks, confirmedBlocks);
+    await this.sendBlockNumbersToKafka(forks, []);
   }
 
   private async detectConfirmed(
@@ -97,7 +95,7 @@ export class Validator implements IValidator {
     blocks: IBlockRoot[]
   ): Promise<IBlockRoot[]> {
     const confirmedBlocks = [];
-    if (consecutiveBlocksAtStart > BLOCKS_THRESHOLD) {
+    if (consecutiveBlocksAtStart >= BLOCKS_THRESHOLD) {
       // Get the confirmed blocks, the consecutive list at the beginning of the list.
       // We subtract the threshold to get the confirmed blocks.
       // E.g 1,2,3,4,5,6,7,8,9,10,12,15,200

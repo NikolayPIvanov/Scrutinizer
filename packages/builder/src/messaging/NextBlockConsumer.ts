@@ -13,12 +13,14 @@ export class NextBlockConsumer extends infrastructure.messaging.BaseConsumer {
     @inject(TYPES.IProvider) private provider: IProvider,
     @inject(TYPES.IConfiguration) private configuration: IConfiguration,
     @inject(TYPES.ILogger) logger: infrastructure.logging.ILogger,
+    @inject(TYPES.IRedisClient)
+    redis: infrastructure.caching.redis.IRedisClient,
     @inject(TYPES.ICommitManager)
     commitManager: infrastructure.messaging.ICommitManager,
     @inject(TYPES.IKafkaClient)
     kafkaClient: infrastructure.messaging.IKafkaClient
   ) {
-    super(kafkaClient, commitManager, logger);
+    super(kafkaClient, commitManager, logger, redis);
 
     this.initialize({
       groupId: this.configuration.kafka.groups.blocks,

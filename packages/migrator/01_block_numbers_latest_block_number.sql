@@ -16,3 +16,7 @@ CREATE TABLE latest_block_number AS
   FROM latest_block_numbers
   GROUP BY tag
   EMIT CHANGES;
+
+DROP STREAM LATEST_BLOCK_NUMBERS;
+DROP STREAM block_numbers;
+DROP TABLE LATEST_BLOCK_NUMBER;

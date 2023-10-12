@@ -18,7 +18,7 @@ CREATE STREAM blocks_full (
     value_format='json',
     partitions=10);
 
-CREATE TABLE blocks_unconfirmed_trace AS
+CREATE TABLE blocks_traces AS
   SELECT `number`,
          LATEST_BY_OFFSET(parentHash) AS parentHash,
          LATEST_BY_OFFSET(hash) AS hash,
@@ -27,6 +27,9 @@ CREATE TABLE blocks_unconfirmed_trace AS
   GROUP BY `number`
   EMIT CHANGES;
 
+
+DROP TABLE blocks_traces;
+DROP STREAM blocks_full;
 
 
 

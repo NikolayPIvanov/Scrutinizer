@@ -17,7 +17,12 @@ import {
     TYPES.IKafkaClient
   );
 
+  const redis = container.get<infrastructure.caching.redis.IRedisClient>(
+    TYPES.IRedisClient
+  );
+
   await kafkaClient.bootstrap();
+  await redis.connect();
 
   const nodeStorageRepository = container.get<INodeStorageRepository>(
     TYPES.INodeStorageRepository
