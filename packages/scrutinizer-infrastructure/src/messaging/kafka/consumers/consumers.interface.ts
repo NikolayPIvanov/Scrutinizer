@@ -42,6 +42,7 @@ export interface ICommitManager {
   notifyFinishedProcessing: (message: IExtendedKafkaMessage) => void;
   commitProcessedOffsets: () => Promise<void>;
   setPartitionCallbacks: (register: IPartitionCallbackRegister) => void;
+  findMessage(partition: number, offset: string): IPartitionMessage | undefined;
 }
 
 export interface IPartitionMessage {

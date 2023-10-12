@@ -21,6 +21,8 @@ const loggingSchema = joi.object<ILoggingConfiguration>().keys({
 
 const topicsSchema = joi.object<ITopicsConfiguration>().keys({
   blocks: joi.string().required(),
+  forks: joi.string().required(),
+  confirmed: joi.string().required(),
   fullBlock: joi.string().required(),
   fullBlockRetry: joi.string().required(),
   fullBlockDlq: joi.string().required(),

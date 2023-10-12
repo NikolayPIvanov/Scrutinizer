@@ -1,6 +1,6 @@
 import {QueueObject, queue} from 'async';
 import {injectable} from 'inversify';
-import {Batch, EachBatchPayload} from 'kafkajs';
+import {Batch, CompressionTypes, EachBatchPayload} from 'kafkajs';
 import {to} from '../../../common';
 import {ILogger} from '../../../logging';
 import {IConsumer, IKafkaClient} from '../kafka.interfaces';
@@ -152,7 +152,8 @@ export class BaseConsumer implements IConsumerInstance {
       bootstrapConfiguration.onMessageHandler ||
       this.onMessageDefaultHandler.bind(this);
     this.onErrorHandler =
-      bootstrapConfiguration.onErrorHandler || this.onErrorDefaultHandler;
+      bootstrapConfiguration.onErrorHandler ||
+      this.onErrorDefaultHandler.bind(this);
     this.autoCommit = bootstrapConfiguration.autoCommit || false;
   }
 
@@ -182,15 +183,24 @@ export class BaseConsumer implements IConsumerInstance {
     configuration: IConsumerConfiguration,
     handler?: (message: IExtendedKafkaMessage) => Promise<void>
   ) {
+    const message = this.commitManager.findMessage(
+      extendedKafkaMessage.partition,
+      extendedKafkaMessage.offset
+    );
+
+    if (message) {
+      return;
+    }
+
     try {
-      if (!handler) throw new Error('No handler provided');
+      if (!handler) {
+        throw new Error('No handler provided');
+      }
 
       this.commitManager.notifyStartProcessing(extendedKafkaMessage);
       const [, error] = await to(handler(extendedKafkaMessage));
       if (error && this.onErrorHandler) {
         this.onErrorHandler(error);
-        this.logger.error(`Error handling message: ${error}`);
-
         await this.retryMessage(extendedKafkaMessage, configuration);
       }
     } finally {
@@ -215,6 +225,7 @@ export class BaseConsumer implements IConsumerInstance {
 
       return to(
         this.kafkaClient.producer.send({
+          compression: CompressionTypes.GZIP,
           topic: configuration.dlqTopic,
           messages: [extendedKafkaMessage],
         })
@@ -223,6 +234,7 @@ export class BaseConsumer implements IConsumerInstance {
 
     const [, error] = await to(
       this.kafkaClient.producer.send({
+        compression: CompressionTypes.GZIP,
         topic: configuration.retryTopic,
         messages: [extendedKafkaMessage],
       })

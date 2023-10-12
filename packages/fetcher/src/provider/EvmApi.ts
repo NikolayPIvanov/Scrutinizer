@@ -303,8 +303,6 @@ export class EvmApi implements IEvmApi {
 
       // Wait 5 seconds before logging again
       await new Promise(resolve => setTimeout(resolve, 5000));
-    } catch (error) {
-      console.log('LogPerf error:', error);
     } finally {
       this.loggingBusy = false;
     }

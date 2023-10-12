@@ -1,6 +1,7 @@
 /* eslint-disable node/no-extraneous-import */
 
 import {inject, injectable} from 'inversify';
+import {CompressionTypes} from 'kafkajs';
 import {infrastructure} from 'scrutinizer-infrastructure';
 import {IExtendedKafkaMessage} from 'scrutinizer-infrastructure/build/src/messaging/kafka/consumers/consumers.interface';
 import {IConfiguration} from '../configuration/interfaces';
@@ -66,6 +67,7 @@ export class RetryBlockConsumer extends infrastructure.messaging.BaseConsumer {
     }
 
     await this.kafkaClient.producer.send({
+      compression: CompressionTypes.GZIP,
       topic: this.configuration.kafka.topics.blocksFull.name,
       messages: [
         {

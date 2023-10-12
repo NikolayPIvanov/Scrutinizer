@@ -12,6 +12,8 @@ export interface IGroupConfiguration {
 
 export interface ITopicsConfiguration {
   blocks: string;
+  forks: string;
+  confirmed: string;
   fullBlock: string;
   fullBlockRetry: string;
   fullBlockDlq: string;

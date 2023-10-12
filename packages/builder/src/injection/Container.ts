@@ -70,7 +70,10 @@ export class ContainerInstance extends Container {
           TYPES.IConfiguration
         );
 
-        return new infrastructure.messaging.KafkaClient(configuration.kafka);
+        return new infrastructure.messaging.KafkaClient({
+          ...configuration.kafka,
+          logLevel: 1, // error
+        });
       })
       .inSingletonScope();
 

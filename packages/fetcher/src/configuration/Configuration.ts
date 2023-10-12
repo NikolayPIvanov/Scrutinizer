@@ -44,6 +44,8 @@ export class Configuration implements IConfiguration {
       brokers: process.env.KAFKA_BROKERS?.split(',') || [],
       topics: {
         blocks: process.env.BLOCKS_TOPIC!,
+        forks: process.env.FORKED_BLOCKS_TOPIC!,
+        confirmed: process.env.CONFIRMED_BLOCKS_TOPIC!,
         fullBlock: process.env.FULL_BLOCKS_TOPIC!,
         fullBlockRetry: process.env.FULL_RETRY_BLOCKS_TOPIC!,
         fullBlockDlq: process.env.FULL_DLQ_BLOCKS_TOPIC!,

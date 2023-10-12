@@ -1,5 +1,6 @@
 /* eslint-disable node/no-extraneous-import */
 import {inject, injectable} from 'inversify';
+import {CompressionTypes} from 'kafkajs';
 import {infrastructure} from 'scrutinizer-infrastructure';
 import {IExtendedKafkaMessage} from 'scrutinizer-infrastructure/build/src/messaging/kafka/consumers/consumers.interface';
 import {IConfiguration} from '../configuration';
@@ -8,8 +9,6 @@ import {IProvider} from '../provider/provider.interfaces';
 
 @injectable()
 export class NextBlockConsumer extends infrastructure.messaging.BaseConsumer {
-  private messages = new Map<string, number>();
-
   constructor(
     @inject(TYPES.IProvider) private provider: IProvider,
     @inject(TYPES.IConfiguration) private configuration: IConfiguration,
@@ -65,22 +64,8 @@ export class NextBlockConsumer extends infrastructure.messaging.BaseConsumer {
       throw new Error(`Block ${blockNumber} not found`);
     }
 
-    const cacheKey = `${message.topic}-${message.partition}-${message.offset}`;
-    const processed = this.messages.get(cacheKey);
-    if (processed === 1) {
-      return;
-    }
-
-    if (processed === 0) {
-      this.logger.info(`Uncommitted message ${cacheKey}`);
-    }
-
-    this.messages.set(
-      `${message.topic}-${message.partition}-${message.offset}`,
-      0
-    );
-
     await this.kafkaClient.producer.send({
+      compression: CompressionTypes.GZIP,
       topic: this.configuration.kafka.topics.blocksFull.name,
       messages: [
         {
@@ -93,11 +78,6 @@ export class NextBlockConsumer extends infrastructure.messaging.BaseConsumer {
         },
       ],
     });
-
-    this.messages.set(
-      `${message.topic}-${message.partition}-${message.offset}`,
-      1
-    );
   };
 
   private handleError = (error: unknown) => {

@@ -35,6 +35,32 @@ export const getConsensusValue = (arr: number[]): number => {
   return consensusValue;
 };
 
+export const getBlockConsensusValue = (blocks: any[]): any => {
+  const frequency = new Map();
+  let maxCount = 0;
+  let consensusValue = 0;
+
+  if (blocks.length === 0) {
+    throw new Error('Cannot get consensus value of empty array');
+  }
+
+  for (const block of blocks) {
+    if (block?.hash === undefined) {
+      continue;
+    }
+
+    const count = frequency.get(block.hash) || 0;
+    frequency.set(block.hash, count + 1);
+
+    if (count + 1 > maxCount) {
+      maxCount = count + 1;
+      consensusValue = block;
+    }
+  }
+
+  return consensusValue;
+};
+
 @injectable()
 export class Provider implements IProvider {
   private providers: IEvmApi[] = [];
@@ -61,7 +87,7 @@ export class Provider implements IProvider {
   public async getBlock(blockNumber: number, forceFastestProvider?: boolean) {
     const time = Date.now();
 
-    const blockFull = await this.getFullBlock(
+    const block = await this.getFullBlock(
       blockNumber,
       forceFastestProvider ? this.getFastestProvider() : undefined
     );
@@ -70,7 +96,7 @@ export class Provider implements IProvider {
       this.refreshProviders();
     }
 
-    return blockFull;
+    return block;
   }
 
   private getFastestProvider() {
@@ -137,39 +163,42 @@ export class Provider implements IProvider {
         return provider.getFullBlock(blockNumber);
       });
 
-      const {success} = await requestMultiplePromisesWithTimeout(
+      const {success, error} = await requestMultiplePromisesWithTimeout(
         promises,
         this.configuration.network.maxRequestTime
       );
 
       const validated = success
         .filter(
-          e => !!e?.number && !!e?.timestamp && !!e?.transactions && !!e?.txLogs
+          e =>
+            !!e?.blockNumber &&
+            !!e?.blockTimestamp &&
+            !!e?.transactions &&
+            !!e?.logs
         )
-        .sort((a, b) => b.txLogs?.length - a.txLogs?.length);
+        .sort((a, b) => b!.logs?.length - a!.logs?.length);
+
+      const consensusBlock = getBlockConsensusValue(success);
 
       const bestBlock = validated.find(
         block =>
-          !!block?.number &&
-          !!block?.timestamp &&
+          block?.hash === consensusBlock?.hash &&
+          !!block?.blockNumber &&
+          !!block?.blockTimestamp &&
           block?.transactions?.length > 0 &&
-          block?.txLogs?.length > 0
+          block?.logs?.length > 0
       );
 
-      if (bestBlock?.number) {
+      if (bestBlock?.blockNumber) {
         return bestBlock;
       }
 
-      if (validated[0]?.number) {
+      if (validated[0]?.blockNumber) {
         return validated[0];
       }
     } catch (error) {
       this.logger.error(error);
     }
-
-    this.logger.error(
-      `No valid block found! Chain: ${this.providerRpcConfiguration?.name}, block: ${blockNumber}`
-    );
 
     return null;
   }

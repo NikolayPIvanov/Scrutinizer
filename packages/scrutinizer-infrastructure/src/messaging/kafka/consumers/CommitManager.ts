@@ -61,24 +61,32 @@ export class CommitManager implements ICommitManager {
     record.done = true;
   }
 
+  public findMessage(
+    partition: number,
+    offset: string
+  ): IPartitionMessage | undefined {
+    this.partitionsData[partition] = this.partitionsData[partition] || [];
+    return this.partitionsData[partition].find(
+      (record: IPartitionMessage) => record.offset === offset
+    );
+  }
+
   public async commitProcessedOffsets() {
-    try {
-      for (const key in this.partitionsData) {
+    await Promise.all(
+      Object.keys(this.partitionsData).map(async key => {
         const partition = +key;
 
         await this.partitionCallbacks[partition].heartbeat();
 
+        const data = [...this.partitionsData[key]];
+
         const {npi, pi} = this.getLastProcessedAndFirstUnprocessedIndexes(key);
 
         const lastProcessedRecord =
-          npi > 0
-            ? this.partitionsData[key][npi - 1]
-            : pi > -1
-            ? this.partitionsData[key][this.partitionsData[key].length - 1]
-            : null;
+          npi > 0 ? data[npi - 1] : pi > -1 ? data[data.length - 1] : null;
 
         if (lastProcessedRecord) {
-          if (!this.partitionCallbacks[partition].isRunning()) break;
+          if (!this.isRunning(partition)) return;
 
           this.partitionCallbacks[partition].resolveOffset(
             lastProcessedRecord.offset
@@ -86,27 +94,26 @@ export class CommitManager implements ICommitManager {
 
           await this.partitionCallbacks[partition].commitOffsetsIfNecessary();
 
-          this.partitionsData[key].splice(
-            0,
-            this.partitionsData[key].indexOf(lastProcessedRecord) + 1
-          ); // remove committed records from array
+          data.splice(0, data.indexOf(lastProcessedRecord) + 1); // remove committed records from array
         }
-      }
-
-      Promise.resolve();
-    } catch (e) {
-      Promise.reject(e);
-    }
+      })
+    );
   }
+
+  private isRunning = (partition: number): boolean => {
+    try {
+      return this.partitionCallbacks[partition].isRunning();
+    } catch (e) {
+      return false;
+    }
+  };
 
   private getLastProcessedAndFirstUnprocessedIndexes(key: string) {
     const pi = this.partitionsData[key].findIndex(
       (record: IPartitionMessage) => record.done
     ); // last processed index
     const npi = this.partitionsData[key].findIndex(
-      (record: IPartitionMessage) => {
-        return !record.done;
-      }
+      (record: IPartitionMessage) => !record.done
     ); // first unprocessed index
 
     return {npi, pi};

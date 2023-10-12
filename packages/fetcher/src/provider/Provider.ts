@@ -3,6 +3,7 @@ import {infrastructure} from 'scrutinizer-infrastructure';
 import {to} from 'scrutinizer-infrastructure/build/src/common';
 
 import {inject, injectable} from 'inversify';
+import {CompressionTypes} from 'kafkajs';
 import {IConfiguration} from '../configuration';
 import {TYPES} from '../injection/types';
 import {EvmApi} from './EvmApi';
@@ -227,7 +228,7 @@ export class Provider implements IProvider {
     }
 
     const currentBlockLag = latestBlock - this.latestBlock;
-    if (this.latestBlock !== 0) {
+    if (this.latestBlock !== 0 && currentBlockLag > 0) {
       const blocks = this.constructConsequentArray(
         currentBlockLag,
         this.latestBlock
@@ -249,13 +250,13 @@ export class Provider implements IProvider {
 
   private verifyConsequentArray = (arr: number[], pivot: number) => {
     if (arr[0] !== pivot + 1) {
-      throw new Error('Invalid block calculation');
+      throw new Error(`Invalid block calculation ${arr.join(', ')}`);
     }
   };
 
   private sendBlockNumbersToKafka = async (blocks: number[]) => {
     await this.kafkaClient.producer.sendBatch({
-      compression: 0,
+      compression: CompressionTypes.GZIP,
       topicMessages: [
         {
           topic: this.configuration.kafka.topics.blocks,

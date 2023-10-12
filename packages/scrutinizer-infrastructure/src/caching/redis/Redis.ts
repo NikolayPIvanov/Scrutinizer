@@ -12,6 +12,14 @@ export class Redis implements IRedisClient {
     });
   }
 
+  public del = async (keys: string[]) => {
+    if (!this.client) {
+      throw new Error('Redis client not initialized');
+    }
+
+    await this.client.del(keys);
+  };
+
   public connect = async () => {
     if (this.client) {
       await this.client.connect();

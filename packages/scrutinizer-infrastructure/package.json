@@ -36,6 +36,7 @@
     "kafkajs": "^2.2.4",
     "ksqldb-client": "^1.0.5",
     "pino": "^8.16.0",
+    "pino-pretty": "^10.2.3",
     "redis": "^4.6.10",
     "reflect-metadata": "^0.1.13"
   },

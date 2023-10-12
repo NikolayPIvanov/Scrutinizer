@@ -1,7 +1,13 @@
 /* eslint-disable node/no-extraneous-import */
 import axios from 'axios';
 import {to} from 'scrutinizer-infrastructure/build/src/common';
-import {IEvmApi, INodeStorageRepository} from './provider.interfaces';
+import {
+  IEvmApi,
+  IFullJsonRpcBlock,
+  IJsonRpcBlock,
+  IJsonRpcLog,
+  INodeStorageRepository,
+} from './provider.interfaces';
 import {requestPromisesWithTimeout} from './utils';
 
 export class EvmApi implements IEvmApi {
@@ -49,7 +55,9 @@ export class EvmApi implements IEvmApi {
     }
   };
 
-  public async getFullBlock(blockNumber: number) {
+  public async getFullBlock(
+    blockNumber: number
+  ): Promise<IFullJsonRpcBlock | null> {
     const result = await this.makeMultiRequest([
       {
         method: 'eth_getBlockByNumber',
@@ -66,47 +74,35 @@ export class EvmApi implements IEvmApi {
       },
     ]);
 
-    const block = result[0];
-    const logs = result[1];
+    const block = result[0] as IJsonRpcBlock | undefined;
+    const logs = result[1] as IJsonRpcLog[] | undefined;
+
+    if (!block || !logs) {
+      this.errorCount++;
+
+      return null;
+    }
 
     try {
-      parseInt(block.number, 16);
-      parseInt(block.timestamp, 16);
+      parseInt(block?.number, 16);
+      parseInt(block?.timestamp, 16);
     } catch (error) {
       this.errorCount++;
     }
-
-    // block.transactions = block.transactions.map((tx: any) => ({
-    //   ...tx,
-    //   gas: parseInt(tx.gas, 16),
-    //   nonce: parseInt(tx.nonce, 16),
-    //   blockNumber: parseInt(tx.blockNumber, 16),
-    //   transactionIndex: parseInt(tx.transactionIndex, 16),
-    //   logs: logs.filter(
-    //     (l: any) => l.transactionHash === tx.hash && l.removed === false
-    //   ),
-    // }));
-
-    // const relativeNativeTransfers = block.transactions.filter(
-    //   (t: any) => t.type !== '0x6a' && t.value !== '0x0' && t.logs.length === 0
-    // );
-
-    // if (relativeNativeTransfers.length) {
-    //   block.native = relativeNativeTransfers;
-    // }
 
     return {
       ...block,
       chainId: this.chainId,
       blockNumber: block ? parseInt(block.number, 16) : null,
       blockTimestamp: block ? parseInt(block.timestamp, 16) : null,
-      txLogs: logs,
-      receipts: [],
+      logs,
     };
   }
 
   public async getChainId() {
-    return parseInt(await this.makeRequest('eth_chainId', []), 16);
+    const chainId = await this.makeRequest('eth_chainId', []);
+
+    return parseInt(chainId, 16);
   }
 
   public async getBlockNumber() {
@@ -317,8 +313,6 @@ export class EvmApi implements IEvmApi {
 
       // Wait 5 seconds before logging again
       await new Promise(resolve => setTimeout(resolve, 5000));
-    } catch (error) {
-      console.log('LogPerf error:', error);
     } finally {
       this.loggingBusy = false;
     }

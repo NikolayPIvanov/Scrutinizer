@@ -67,28 +67,22 @@ export class NodeStorageRepository implements INodeStorageRepository {
   }
 
   public upsert(node: RpcNodes, update = 0) {
-    try {
-      if (update === 0) {
-        const insertQuery = this.nativeDb.prepare(`
+    if (update === 0) {
+      const insertQuery = this.nativeDb.prepare(`
         REPLACE INTO rpc_nodes (chainName, chainId, rpcAddress, totalRequest, successRate, latency, errorCount, rateLimit)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
-        insertQuery.run(
-          node.chainName,
-          node.chainId,
-          node.rpcAddress,
-          node.totalRequest,
-          node.successRate,
-          node.latency,
-          node.errorCount,
-          node.rateLimit
-        );
-      }
-    } catch (error) {
-      console.log('Node Upsert error', error);
-
-      throw error;
+      insertQuery.run(
+        node.chainName,
+        node.chainId,
+        node.rpcAddress,
+        node.totalRequest,
+        node.successRate,
+        node.latency,
+        node.errorCount,
+        node.rateLimit
+      );
     }
   }
 

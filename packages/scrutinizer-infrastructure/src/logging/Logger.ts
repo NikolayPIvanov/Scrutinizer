@@ -10,6 +10,12 @@ export class Logger implements ILogger {
     this._logger = pino({
       level: configuration.level || 'info',
       timestamp: () => `,"timestamp":"${new Date(Date.now()).toISOString()}"`,
+      transport: {
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+        },
+      },
     });
   }
 
