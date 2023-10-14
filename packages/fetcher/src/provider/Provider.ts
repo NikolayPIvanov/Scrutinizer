@@ -15,6 +15,28 @@ import {
 import {ITransformedExtendedRpcInstance} from './scrapers/scraper.interfaces';
 import {requestMultiplePromisesWithTimeout} from './utils';
 
+type Success<T> = {
+  error: false;
+  value: T;
+};
+
+type Failure<U> = {
+  error: true;
+  value: U;
+};
+
+type Result<T, U> = Success<T> | Failure<U>;
+
+const successful = <T>(value: T): Success<T> => ({
+  error: false,
+  value,
+});
+
+const failure = <T>(value: T): Failure<T> => ({
+  error: true,
+  value,
+});
+
 export const getConsensusValue = (arr: number[]): number => {
   const frequency = new Map();
   let maxCount = 0;
@@ -41,12 +63,11 @@ const maxBlocksPerIteration = 25000;
 
 @injectable()
 export class Provider implements IProvider {
-  private providers: IEvmApi[] = [];
-  private allProviders: IEvmApi[] = [];
-  private latestBlock = 0;
-  private blockLag = 0;
+  private currentProviders: IEvmApi[] = [];
+  private allAvailableProviders: IEvmApi[] = [];
   private providerRpcConfiguration: ITransformedExtendedRpcInstance | undefined;
-  private lastCommitted: number | undefined;
+  private blockLag = 0;
+  private lastSentNumber = 0;
 
   constructor(
     @inject(TYPES.ILogger) private logger: infrastructure.logging.ILogger,
@@ -82,10 +103,11 @@ export class Provider implements IProvider {
         }) as unknown as IEvmApi
     );
 
-    this.allProviders = await Promise.all(
+    this.allAvailableProviders = await Promise.all(
       providers?.map(async provider => {
         if (
-          this.providers.length >= this.configuration.network.maxProviderCount
+          this.currentProviders.length >=
+          this.configuration.network.maxProviderCount
         ) {
           return provider;
         }
@@ -96,7 +118,7 @@ export class Provider implements IProvider {
         }
 
         if (chainId === this.providerRpcConfiguration?.chainId) {
-          this.providers.push(provider);
+          this.currentProviders.push(provider);
         }
 
         return provider;
@@ -112,7 +134,7 @@ export class Provider implements IProvider {
   }
 
   private initializeBlockTimeCalculation = async (lastCommitted: number) => {
-    this.lastCommitted = lastCommitted;
+    this.lastSentNumber = lastCommitted;
     const [, error] = await to(this.calculateBlockLagAndLatestBlock());
     if (error) {
       this.logger.error('calculateBlockTime', error);
@@ -140,7 +162,7 @@ export class Provider implements IProvider {
           this.refreshProviders();
         }
       } catch (error) {
-        this.logger.error(error);
+        this.logger.error(error, 'initializePeriodicBlockLag');
       } finally {
         calculatingLag = false;
       }
@@ -153,7 +175,7 @@ export class Provider implements IProvider {
         return forcedProvider.getFullBlock(blockNumber);
       }
 
-      const promises = this.providers.map(provider => {
+      const promises = this.currentProviders.map(provider => {
         return provider.getFullBlock(blockNumber);
       });
 
@@ -184,7 +206,7 @@ export class Provider implements IProvider {
         return validated[0];
       }
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(error, 'getFullBlock');
     }
 
     this.logger.error(
@@ -194,68 +216,56 @@ export class Provider implements IProvider {
     return null;
   }
 
+  /**
+   * Calculates the block lag and latest block on the blockchain.
+   * Latest block is the highest block number returned by the providers.
+   * A consensus value is calculated from the providers where the most common block number is returned.
+   * Block lag is the difference between the latest block and the last committed block.
+   */
   async calculateBlockLagAndLatestBlock() {
-    const promises = this.providers.map(provider => provider.getBlockNumber());
+    // Get the block number from the providers.
+    const blockNumberOrError = await this.getBlockNumber();
+    if (blockNumberOrError.error) {
+      return;
+    }
+
+    const blockNumber = blockNumberOrError.value;
+
+    // Set the pivot so we can have a starting point for the block lag calculation.
+    const pivot = this.lastSentNumber || blockNumber;
+    const lag = blockNumber - pivot;
+    const blocksPerIteration = Math.min(lag, maxBlocksPerIteration);
+
+    const blockNumbers = this.constructConsequentArray(
+      blocksPerIteration,
+      pivot
+    );
+
+    await this.sendBlockNumbersToKafka(blockNumbers);
+
+    this.blockLag = lag - blocksPerIteration;
+    this.lastSentNumber = blockNumbers[blockNumbers.length - 1];
+  }
+
+  private async getBlockNumber(): Promise<Result<number, Error>> {
+    const promises = this.currentProviders.map(provider =>
+      provider.getBlockNumber()
+    );
     const {success} = await requestMultiplePromisesWithTimeout(
       promises,
       this.configuration.network.maxRequestTime
     );
 
     if (success.length === 0) {
-      return;
+      return failure(Error('No valid block number found'));
     }
 
-    const latestBlock = getConsensusValue(success);
-    if (!latestBlock) {
-      return;
+    const block = getConsensusValue(success);
+    if (!block) {
+      return failure(Error('No valid block number found'));
     }
 
-    // If we have something in KSQL, we need to catch up.
-    if (this.lastCommitted && this.lastCommitted < latestBlock) {
-      // If we have a block lag, we need to catch up.
-      const currentBlockLag = latestBlock - this.lastCommitted;
-      // Ensure we don't send too many blocks at once.
-      const blocksPerIteration = Math.min(
-        currentBlockLag,
-        maxBlocksPerIteration
-      );
-
-      // Construct an array of block numbers to send to Kafka.
-      const blocks = this.constructConsequentArray(
-        blocksPerIteration,
-        this.lastCommitted
-      );
-
-      // Send the block numbers to Kafka.
-      await this.sendBlockNumbersToKafka(blocks);
-
-      if (currentBlockLag > maxBlocksPerIteration) {
-        this.lastCommitted += maxBlocksPerIteration;
-        this.latestBlock = this.lastCommitted;
-
-        return;
-      }
-
-      this.latestBlock += this.lastCommitted + blocks.length;
-      this.lastCommitted = undefined;
-
-      return;
-    }
-
-    const currentBlockLag = latestBlock - this.latestBlock;
-    if (this.latestBlock !== 0 && currentBlockLag > 0) {
-      const blocks = this.constructConsequentArray(
-        currentBlockLag,
-        this.latestBlock
-      );
-
-      await this.sendBlockNumbersToKafka(blocks);
-    }
-
-    this.blockLag = currentBlockLag;
-    if (latestBlock > this.latestBlock) {
-      this.latestBlock = latestBlock;
-    }
+    return successful(block);
   }
 
   private constructConsequentArray = (length: number, start: number) => {
@@ -266,10 +276,8 @@ export class Provider implements IProvider {
   };
 
   private verifyConsequentArray = (arr: number[], pivot: number) => {
-    for (let i = 0; i < arr.length - 1; i++) {
-      if (arr[i] !== pivot + i + 1) {
-        throw new Error(`Invalid block calculation ${arr.join(', ')}`);
-      }
+    if (arr[0] !== pivot + 1) {
+      throw new Error(`Invalid block calculation ${arr.join(', ')}`);
     }
   };
 
@@ -288,8 +296,8 @@ export class Provider implements IProvider {
 
   private async refreshProviders() {
     try {
-      const availableProviders = this.allProviders.filter(
-        e => !this.providers.find(k => k.endpointUrl === e.endpointUrl)
+      const availableProviders = this.allAvailableProviders.filter(
+        e => !this.currentProviders.find(k => k.endpointUrl === e.endpointUrl)
       );
 
       if (availableProviders.length < 1) {
@@ -297,13 +305,13 @@ export class Provider implements IProvider {
       }
 
       if (
-        this.providers.filter(e => e.errorCount > 0 || e.latency > 500)
+        this.currentProviders.filter(e => e.errorCount > 0 || e.latency > 500)
           .length === 0
       ) {
         return;
       }
 
-      this.providers.sort((a, b) => a.errorCount - b.errorCount);
+      this.currentProviders.sort((a, b) => a.errorCount - b.errorCount);
 
       const nextProvider = availableProviders[0];
 
@@ -318,9 +326,9 @@ export class Provider implements IProvider {
       }
 
       if (chainId === this.providerRpcConfiguration?.chainId) {
-        this.providers.pop();
+        this.currentProviders.pop();
 
-        this.providers.push(nextProvider);
+        this.currentProviders.push(nextProvider);
       }
     } catch (error: unknown) {
       this.logger.error(`${(error as any).message!}`);

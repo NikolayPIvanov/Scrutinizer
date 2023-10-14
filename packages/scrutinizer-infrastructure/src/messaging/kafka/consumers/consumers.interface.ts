@@ -41,7 +41,7 @@ export interface ICommitManager {
     callback: (message: IExtendedKafkaMessage) => Promise<void>
   ) => void;
   start: (consumerConfiguration: IConsumerConfig) => void;
-  notifyStartProcessing: (message: IExtendedKafkaMessage) => void;
+  notifyStartProcessing: (message: IExtendedKafkaMessage) => boolean;
   notifyFinishedProcessing: (message: IExtendedKafkaMessage) => void;
   commitProcessedOffsets: () => Promise<void>;
   setPartitionCallbacks: (register: IPartitionCallbackRegister) => void;

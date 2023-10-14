@@ -45,11 +45,20 @@ export class CommitManager implements ICommitManager {
     const topic = message.topic;
 
     this.partitionsData[partition] = this.partitionsData[partition] || [];
+    const record = this.partitionsData[partition].find(
+      (record: IPartitionMessage) => record.offset === offset
+    );
+    if (record) {
+      return true;
+    }
+
     this.partitionsData[partition].push({
       offset: offset,
       topic: topic,
       done: false,
     });
+
+    return false;
   }
 
   public notifyFinishedProcessing(message: IExtendedKafkaMessage) {

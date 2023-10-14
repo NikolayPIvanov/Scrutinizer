@@ -1,6 +1,9 @@
 import {Configuration} from './Configuration';
 import {ConfigurationValidationSchema} from './ConfigurationValidationSchema';
-import {IConfiguration, IConfigurationValidationSchema} from './interfaces';
+import {
+  IConfiguration,
+  IConfigurationValidationSchema,
+} from './configuration.interfaces';
 
 export {IConfiguration, IConfigurationValidationSchema};
 

@@ -9,7 +9,7 @@ import {
   INetworkConfiguration,
   IRedisConfiguration,
   ITopicsConfiguration,
-} from './interfaces';
+} from './configuration.interfaces';
 import joi = require('joi');
 
 const loggingSchema = joi.object<ILoggingConfiguration>().keys({

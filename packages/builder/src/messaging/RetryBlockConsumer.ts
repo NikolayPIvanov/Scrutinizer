@@ -85,6 +85,6 @@ export class RetryBlockConsumer extends infrastructure.messaging.BaseConsumer {
   };
 
   private handleError = (error: unknown) => {
-    this.logger.error(error);
+    this.logger.error(error, 'handleError');
   };
 }

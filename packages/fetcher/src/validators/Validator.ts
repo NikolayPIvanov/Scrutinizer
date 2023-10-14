@@ -37,7 +37,7 @@ export class Validator implements IValidator {
 
   async push(block: IBlockRoot): Promise<void> {
     // Store block in redis.
-    await this.redis.hSet(block.number.toString(), block);
+    await this.redis.hSet(this.getCacheKey(block.number), block);
 
     // If block is already in the list, replace it.
     if (this.uniqueBlocks.has(block.number)) {
@@ -110,7 +110,7 @@ export class Validator implements IValidator {
       // Remove confirmed blocks from redis.
 
       await this.redis.del(
-        confirmedBlocks.map(block => block.number.toString())
+        confirmedBlocks.map(block => this.getCacheKey(block.number))
       );
 
       // Remove confirmed blocks from the list.
@@ -167,4 +167,6 @@ export class Validator implements IValidator {
       ],
     });
   };
+
+  private getCacheKey = (blockNumber: number) => `block-${blockNumber}`;
 }

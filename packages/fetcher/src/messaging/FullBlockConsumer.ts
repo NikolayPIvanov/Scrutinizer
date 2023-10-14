@@ -3,7 +3,7 @@ import {inject, injectable} from 'inversify';
 import {infrastructure} from 'scrutinizer-infrastructure';
 // eslint-disable-next-line node/no-extraneous-import
 import {IExtendedKafkaMessage} from 'scrutinizer-infrastructure/build/src/messaging/kafka/consumers/consumers.interface';
-import {IConfiguration} from '../configuration/interfaces';
+import {IConfiguration} from '../configuration/configuration.interfaces';
 import {TYPES} from '../injection/types';
 import {IValidator} from '../validators/Validator';
 

@@ -9,7 +9,7 @@ import {
   ILoggingConfiguration,
   INetworkConfiguration,
   IRedisConfiguration,
-} from './interfaces';
+} from './configuration.interfaces';
 
 dotenv.config();
 

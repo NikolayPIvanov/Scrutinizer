@@ -206,8 +206,9 @@ export class BaseConsumer implements IConsumerInstance {
         throw new Error('No handler provided');
       }
 
-      this.commitManager.notifyStartProcessing(extendedKafkaMessage);
-      await this.redis.set(key, KEY_VALUE);
+      const alreadyProcessing =
+        this.commitManager.notifyStartProcessing(extendedKafkaMessage);
+      if (alreadyProcessing) return;
 
       const [, error] = await to(handler(extendedKafkaMessage));
       if (error && this.onErrorHandler) {
@@ -217,6 +218,7 @@ export class BaseConsumer implements IConsumerInstance {
       }
     } finally {
       this.commitManager.notifyFinishedProcessing(extendedKafkaMessage);
+      await this.redis.set(key, KEY_VALUE);
     }
   }
 
@@ -267,8 +269,6 @@ export class BaseConsumer implements IConsumerInstance {
   }
 
   private async onErrorDefaultHandler(error: unknown) {
-    this.logger.error(error);
-
     return Promise.resolve();
   }
 
