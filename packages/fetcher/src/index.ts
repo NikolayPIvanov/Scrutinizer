@@ -16,7 +16,7 @@ import {IValidator} from './validators';
   const container = new ContainerInstance();
 
   await bootstrapInfrastructure(container);
-  await createProvider(container);
+  await initializeProvider(container);
 
   container.get<IValidator>(TYPES.IValidator);
 })();
@@ -35,7 +35,7 @@ async function bootstrapInfrastructure(container: ContainerInstance) {
   await nodeStorageRepository.init();
 }
 
-async function createProvider(container: ContainerInstance) {
+async function initializeProvider(container: ContainerInstance) {
   const providerConfigurationMerger =
     container.get<IProviderConfigurationMerger>(
       TYPES.IProviderConfigurationMerger

@@ -1,5 +1,4 @@
 /* eslint-disable node/no-extraneous-import */
-import {IRedisConfiguration} from 'scrutinizer-infrastructure/build/src/caching/redis';
 
 export interface IKafkaConfiguration {
   clientId: string | undefined;
@@ -43,7 +42,6 @@ export interface IConfiguration {
   logging: ILoggingConfiguration;
   kafka: IKafkaConfiguration;
   network: INetworkConfiguration;
-  redis: IRedisConfiguration;
 }
 
 export interface IConfigurationValidationSchema {

@@ -6,27 +6,24 @@ import {
   IConfigurationValidationSchema,
 } from '../configuration';
 
-import {NodeStorageRepository} from '../provider/NodeStorageRepository';
-import {Provider} from '../provider/Provider';
-import {ProviderConfigurationMerger} from '../provider/ProviderConfigurationMerger';
 import {
+  ChainIdScrapper,
+  ChainRpcScrapper,
+  IChainIdNamePair,
+  IChainRpcUrlPair,
   INodeStorageRepository,
   IProvider,
   IProviderConfigurationMerger,
-} from '../provider/provider.interfaces';
-import {ChainIdScrapper} from '../provider/scrapers/ChainIdScrapper';
-import {ChainRpcScrapper} from '../provider/scrapers/ChainRpcScrapper';
-import {
-  IChainIdNamePair,
-  IChainRpcUrlPair,
   IScrapper,
-} from '../provider/scrapers/scraper.interfaces';
-import {TYPES} from './types';
+  NodeStorageRepository,
+  Provider,
+  ProviderConfigurationMerger,
+} from '../provider';
 
 // eslint-disable-next-line node/no-extraneous-import
 import {infrastructure} from 'scrutinizer-infrastructure';
-import {NextBlockConsumer} from '../messaging/NextBlockConsumer';
-import {RetryBlockConsumer} from '../messaging/RetryBlockConsumer';
+import {NextBlockConsumer, RetryBlockConsumer} from '../messaging';
+import {TYPES} from './types';
 
 export class ContainerInstance extends Container {
   constructor() {
@@ -84,16 +81,6 @@ export class ContainerInstance extends Container {
         );
 
         return new infrastructure.logging.Logger(configuration.logging);
-      })
-      .inSingletonScope();
-
-    this.bind<infrastructure.caching.redis.IRedisClient>(TYPES.IRedisClient)
-      .toDynamicValue((context: interfaces.Context) => {
-        const configuration = context.container.get<IConfiguration>(
-          TYPES.IConfiguration
-        );
-
-        return new infrastructure.caching.redis.Redis(configuration.redis);
       })
       .inSingletonScope();
 

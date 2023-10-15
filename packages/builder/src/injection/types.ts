@@ -11,5 +11,4 @@ export const TYPES = {
   IKafkaClient: Symbol('IKafkaClient'),
   IConsumerInstance: Symbol('IConsumerInstance'),
   ICommitManager: Symbol('ICommitManager'),
-  IRedisClient: Symbol('IRedisClient'),
 };

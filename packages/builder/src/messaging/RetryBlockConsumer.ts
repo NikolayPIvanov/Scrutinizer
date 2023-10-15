@@ -1,12 +1,12 @@
 /* eslint-disable node/no-extraneous-import */
 
 import {inject, injectable} from 'inversify';
-import {CompressionTypes} from 'kafkajs';
 import {infrastructure} from 'scrutinizer-infrastructure';
 import {IExtendedKafkaMessage} from 'scrutinizer-infrastructure/build/src/messaging/kafka/consumers/consumers.interface';
 import {IConfiguration} from '../configuration/interfaces';
 import {TYPES} from '../injection/types';
 import {IProvider} from '../provider/provider.interfaces';
+import {getBlockAndBroadcast, validate} from './block.consumer.common';
 
 @injectable()
 export class RetryBlockConsumer extends infrastructure.messaging.BaseConsumer {
@@ -14,14 +14,12 @@ export class RetryBlockConsumer extends infrastructure.messaging.BaseConsumer {
     @inject(TYPES.IProvider) private provider: IProvider,
     @inject(TYPES.IConfiguration) private configuration: IConfiguration,
     @inject(TYPES.ILogger) logger: infrastructure.logging.ILogger,
-    @inject(TYPES.IRedisClient)
-    redis: infrastructure.caching.redis.IRedisClient,
     @inject(TYPES.ICommitManager)
     commitManager: infrastructure.messaging.ICommitManager,
     @inject(TYPES.IKafkaClient)
     kafkaClient: infrastructure.messaging.IKafkaClient
   ) {
-    super(kafkaClient, commitManager, logger, redis);
+    super(kafkaClient, commitManager, logger);
 
     this.initialize({
       groupId: this.configuration.kafka.groups.blocksRetry,
@@ -45,42 +43,15 @@ export class RetryBlockConsumer extends infrastructure.messaging.BaseConsumer {
   }
 
   public handle = async (message: IExtendedKafkaMessage) => {
-    const raw = message.value?.toString();
-    if (!raw) {
-      return;
-    }
+    const blockNumber = validate(message);
 
-    const {blockNumber} = JSON.parse(raw);
-
-    if (Number.isNaN(blockNumber)) {
-      return;
-    }
-
-    const lag = +message.highWaterOffset - +message.offset;
-    const forceFastestProvider = lag > 10;
-
-    const block = await this.provider.getBlock(
+    await getBlockAndBroadcast({
       blockNumber,
-      forceFastestProvider
-    );
-
-    if (!block) {
-      throw new Error(`Block ${blockNumber} not found`);
-    }
-
-    await this.kafkaClient.producer.send({
-      compression: CompressionTypes.GZIP,
-      topic: this.configuration.kafka.topics.blocksFull.name,
-      messages: [
-        {
-          key: message.key,
-          value: JSON.stringify(block),
-          headers: {
-            'x-origin': 'retry-block-consumer',
-            'x-original-message': `${message.topic}-${message.partition}-${message.offset}`,
-          },
-        },
-      ],
+      provider: this.provider,
+      kafkaClient: this.kafkaClient,
+      configuration: this.configuration,
+      message,
+      origin: 'retry',
     });
   };
 

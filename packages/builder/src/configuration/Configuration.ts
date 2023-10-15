@@ -1,7 +1,6 @@
 /* eslint-disable node/no-extraneous-import */
 import * as dotenv from 'dotenv';
 import {inject, injectable} from 'inversify';
-import {IRedisConfiguration} from 'scrutinizer-infrastructure/build/src/caching/redis';
 import {TYPES} from '../injection/types';
 import {
   IConfiguration,
@@ -20,7 +19,6 @@ export class Configuration implements IConfiguration {
   logging: ILoggingConfiguration;
   kafka: IKafkaConfiguration;
   network: INetworkConfiguration;
-  redis: IRedisConfiguration;
 
   constructor(
     @inject(TYPES.IConfigurationValidationSchema)
@@ -32,15 +30,11 @@ export class Configuration implements IConfiguration {
     this.logging = configuration.logging;
     this.kafka = configuration.kafka;
     this.network = configuration.network;
-    this.redis = configuration.redis;
   }
 
   private getConfiguration = () => ({
     logging: {
       level: process.env.LOG_LEVEL!,
-    },
-    redis: {
-      url: process.env.REDIS_URL!,
     },
     kafka: {
       clientId: process.env.KAFKA_CLIENT_ID!,
@@ -59,7 +53,7 @@ export class Configuration implements IConfiguration {
           name: process.env.DLQ_BLOCKS_TOPIC_NAME!,
         },
         blocksFull: {
-          name: process.env.FULL_BLOCKS_TOPIC!,
+          name: process.env.FULL_BLOCKS_TOPIC_NAME!,
           maxBytesPerPartition:
             +process.env.BLOCKS_TOPIC_MAX_BYTES_PER_PARTITION! ||
             DEFAULT_MAX_BYTES_PER_PARTITION * 10,

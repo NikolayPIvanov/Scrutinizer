@@ -13,17 +13,19 @@ import {
 (async () => {
   const container = new ContainerInstance();
 
+  await bootstrapInfrastructure(container);
+  await initializeProvider(container);
+})();
+
+async function bootstrapInfrastructure(container: ContainerInstance) {
   const kafkaClient = container.get<infrastructure.messaging.IKafkaClient>(
     TYPES.IKafkaClient
   );
 
-  const redis = container.get<infrastructure.caching.redis.IRedisClient>(
-    TYPES.IRedisClient
-  );
-
   await kafkaClient.bootstrap();
-  await redis.connect();
+}
 
+async function initializeProvider(container: ContainerInstance) {
   const nodeStorageRepository = container.get<INodeStorageRepository>(
     TYPES.INodeStorageRepository
   );
@@ -31,12 +33,13 @@ import {
     container.get<IProviderConfigurationMerger>(
       TYPES.IProviderConfigurationMerger
     );
-  const provider = container.get<IProvider>(TYPES.IProvider);
 
   await nodeStorageRepository.init();
 
   const providersConfiguration =
     await providerConfigurationMerger.mergeConfigurations();
 
+  const provider = container.get<IProvider>(TYPES.IProvider);
+
   await provider.initialize(providersConfiguration);
-})();
+}

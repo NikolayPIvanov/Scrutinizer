@@ -1,7 +1,6 @@
 import {QueueObject, queue} from 'async';
 import {injectable} from 'inversify';
 import {Batch, CompressionTypes, EachBatchPayload} from 'kafkajs';
-import {IRedisClient} from '../../../caching/redis';
 import {to} from '../../../common';
 import {ILogger} from '../../../logging';
 import {IConsumer, IKafkaClient} from '../kafka.interfaces';
@@ -28,8 +27,7 @@ export class BaseConsumer implements IConsumerInstance {
   constructor(
     protected kafkaClient: IKafkaClient,
     protected commitManager: ICommitManager,
-    protected logger: ILogger,
-    protected redis: IRedisClient
+    protected logger: ILogger
   ) {}
 
   public initialize = async (

@@ -1,6 +1,5 @@
 /* eslint-disable node/no-extraneous-import */
 import {injectable} from 'inversify';
-import {IRedisConfiguration} from 'scrutinizer-infrastructure/build/src/caching/redis';
 import {
   IConfiguration,
   IConfigurationValidationSchema,
@@ -37,10 +36,6 @@ const groupsSchema = joi.object<IGroupConfiguration>().keys({
   blocksRetry: joi.string().required(),
 });
 
-const redisSchema = joi.object<IRedisConfiguration>().keys({
-  url: joi.string().required(),
-});
-
 const kafkaSchema = joi.object<IKafkaConfiguration>().keys({
   clientId: joi.string().required(),
   brokers: joi.array().required().min(1),
@@ -64,7 +59,6 @@ const configurationSchema = joi
     logging: loggingSchema,
     kafka: kafkaSchema,
     network: networkSchema,
-    redis: redisSchema,
   })
   .unknown();
 
