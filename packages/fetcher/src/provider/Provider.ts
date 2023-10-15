@@ -241,9 +241,14 @@ export class Provider implements IProvider {
       pivot
     );
 
+    // First send the block numbers to Kafka.
     await this.sendBlockNumbersToKafka(blockNumbers);
 
+    // Then calculate the block lag.
     this.blockLag = lag - blocksPerIteration;
+
+    // Set the last sent number to the last block number sent to Kafka.
+    // This is order to avoid missing on blocks in case of node immediately shutting down.
     this.lastSentNumber = blockNumbers[blockNumbers.length - 1];
   }
 
@@ -284,7 +289,7 @@ export class Provider implements IProvider {
   private sendBlockNumbersToKafka = async (blocks: number[]) => {
     await this.kafkaClient.producer.send({
       compression: CompressionTypes.GZIP,
-      topic: this.configuration.kafka.topics.blocks,
+      topic: this.configuration.kafka.topics.blockNumbers.name,
       messages: blocks.map(block => ({
         key: block.toString(),
         value: JSON.stringify({blockNumber: block}),

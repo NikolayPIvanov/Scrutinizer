@@ -9,6 +9,12 @@ export interface IBlockTrace {
   parentHash: string;
 }
 
+export interface IRawBlock {
+  blockNumber: number;
+  hash: string;
+  parentHash: string;
+}
+
 export interface ILastCommittedRow {
   BLOCKNUMBER: number;
 }

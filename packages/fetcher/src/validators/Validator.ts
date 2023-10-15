@@ -25,7 +25,7 @@ export class Validator implements IValidator {
     );
   }
 
-  async validateChainIntegrity(): Promise<void> {
+  public async validateChainIntegrity(): Promise<void> {
     const [blocks, error] = await to(
       this.dbQueries.getBlocks(this.lastConfirmedBlockNumber)
     );
@@ -43,7 +43,7 @@ export class Validator implements IValidator {
     await this.sendBlockNumbersToKafka(forks, confirmed);
 
     if (confirmed.length > 0) {
-      this.lastConfirmedBlockNumber = confirmed[confirmed.length - 1].number;
+      this.lastConfirmedBlockNumber = confirmed[confirmed.length - 1];
     }
   }
 
@@ -74,51 +74,52 @@ export class Validator implements IValidator {
   private findConfirmed(
     consecutiveBlocksAtStart: number,
     blocks: IBlockRoot[]
-  ) {
+  ): number[] {
     if (
       consecutiveBlocksAtStart < this.configuration.validator.blocksThreshold
     ) {
       return [];
     }
 
-    const confirmed = blocks.slice(
-      0,
-      consecutiveBlocksAtStart - this.configuration.validator.blocksThreshold
-    );
+    const confirmed = blocks
+      .slice(
+        0,
+        consecutiveBlocksAtStart - this.configuration.validator.blocksThreshold
+      )
+      .map(block => block.number);
 
     return confirmed;
   }
 
   private sendBlockNumbersToKafka = async (
     forkedBlockNumbers: number[] = [],
-    confirmed: IBlockRoot[] = []
+    confirmed: number[] = []
   ) => {
     try {
       await this.kafkaClient.producer.sendBatch({
         compression: CompressionTypes.GZIP,
         topicMessages: [
           {
-            topic: this.configuration.kafka.topics.blocks,
+            topic: this.configuration.kafka.topics.blockNumbers.name,
             messages: forkedBlockNumbers.map(block => ({
               key: block.toString(),
               value: JSON.stringify({blockNumber: block}),
             })),
           },
           {
-            topic: this.configuration.kafka.topics.forks,
-            messages: forkedBlockNumbers.map(block => ({
-              key: block.toString(),
-              value: JSON.stringify({blockNumber: block}),
+            topic: this.configuration.kafka.topics.forked.name,
+            messages: forkedBlockNumbers.map(blockNumber => ({
+              key: blockNumber.toString(),
+              value: JSON.stringify({blockNumber}),
             })),
           },
-          // {
-          //   topic: this.configuration.kafka.topics.confirmed,
-          //   messages: [],
-          //   // messages: confirmed.map(block => ({
-          //   //   key: block.number.toString(),
-          //   //   value: JSON.stringify(block),
-          //   // })),
-          // },
+          {
+            topic: this.configuration.kafka.topics.confirmed.name,
+            messages: confirmed.map(blockNumber => ({
+              key: blockNumber.toString(),
+              value: JSON.stringify({blockNumber}),
+            })),
+          },
         ],
       });
     } catch (error) {

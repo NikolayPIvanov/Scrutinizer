@@ -2,7 +2,12 @@ import {inject, injectable} from 'inversify';
 // eslint-disable-next-line node/no-extraneous-import
 import {infrastructure} from 'scrutinizer-infrastructure';
 import {TYPES} from '../injection/types';
-import {IDbQueries, ILastCommittedRow} from './ksql.interfaces';
+import {
+  IBlockTrace,
+  IDbQueries,
+  ILastCommittedRow,
+  IRawBlock,
+} from './ksql.interfaces';
 
 @injectable()
 export class DbQueries implements IDbQueries {
@@ -10,7 +15,12 @@ export class DbQueries implements IDbQueries {
     @inject(TYPES.IKsqlDb) private ksql: infrastructure.ksql.IKsqldb
   ) {}
 
-  async getLatestCommittedBlockNumber(): Promise<number> {
+  /**
+   * Get the latest committed block number.
+   * Called only on start-up.
+   * @returns The latest committed block number or 0 if no blocks have been committed yet.
+   */
+  public async getLatestCommittedBlockNumber(): Promise<number> {
     const {data, error} = await this.ksql.client.query(
       'SELECT * FROM latest_block_number;'
     );
@@ -27,7 +37,12 @@ export class DbQueries implements IDbQueries {
     return (rows[0] as ILastCommittedRow).BLOCKNUMBER;
   }
 
-  async getBlocks(after?: number): Promise<any[]> {
+  /**
+   * Used by the validator of the block chain validator to get the blocks to validate.
+   * @param after - The block number to start from. If not provided, all blocks are returned.
+   * @returns The blocks after the provided block number or all blocks if no block number is provided.
+   */
+  public async getBlocks(after?: number): Promise<IBlockTrace[]> {
     const query = after
       ? `SELECT * FROM blocks_traces WHERE BLOCKNUMBER > ${after};`
       : 'SELECT * FROM blocks_traces;';
@@ -39,12 +54,9 @@ export class DbQueries implements IDbQueries {
 
     const {rows} = data;
 
-    return (
-      rows?.map((row: any) => ({
-        number: row.blockNumber,
-        hash: row.hash,
-        parentHash: row.parentHash,
-      })) || []
-    );
+    return (rows?.map((row: unknown) => {
+      const {blockNumber, hash, parentHash} = row as IRawBlock;
+      return {number: blockNumber, hash, parentHash};
+    }) || []) as IBlockTrace[];
   }
 }

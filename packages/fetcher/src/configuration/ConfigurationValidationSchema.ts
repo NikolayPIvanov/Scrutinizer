@@ -2,12 +2,11 @@ import {injectable} from 'inversify';
 import {
   IConfiguration,
   IConfigurationValidationSchema,
-  IGroupConfiguration,
   IKafkaConfiguration,
   IKsqlConfiguration,
   ILoggingConfiguration,
   INetworkConfiguration,
-  IRedisConfiguration,
+  ITopicConfiguration,
   ITopicsConfiguration,
   IValidatorConfiguration,
 } from './configuration.interfaces';
@@ -20,22 +19,15 @@ const loggingSchema = joi.object<ILoggingConfiguration>().keys({
     .optional(),
 });
 
+const topicSchema = joi.object<ITopicConfiguration>().keys({
+  name: joi.string().required(),
+  maxBytesPerPartition: joi.number().optional(),
+});
+
 const topicsSchema = joi.object<ITopicsConfiguration>().keys({
-  blocks: joi.string().required(),
-  forks: joi.string().required(),
-  confirmed: joi.string().required(),
-  fullBlock: joi.string().required(),
-  fullBlockRetry: joi.string().required(),
-  fullBlockDlq: joi.string().required(),
-});
-
-const groupsSchema = joi.object<IGroupConfiguration>().keys({
-  fullBlock: joi.string().required(),
-  retryFullBlock: joi.string().required(),
-});
-
-const redisSchema = joi.object<IRedisConfiguration>().keys({
-  url: joi.string().required(),
+  blockNumbers: topicSchema,
+  forked: topicSchema,
+  confirmed: topicSchema,
 });
 
 const ksqlDbSchema = joi.object<IKsqlConfiguration>().keys({
@@ -52,7 +44,6 @@ const kafkaSchema = joi.object<IKafkaConfiguration>().keys({
   clientId: joi.string().required(),
   brokers: joi.array().required().min(1),
   topics: topicsSchema,
-  groups: groupsSchema,
 });
 
 const networkSchema = joi.object<INetworkConfiguration>().keys({
@@ -71,7 +62,6 @@ const configurationSchema = joi
     logging: loggingSchema,
     kafka: kafkaSchema,
     network: networkSchema,
-    redis: redisSchema,
     ksql: ksqlDbSchema,
     validator: validatorSchema,
   })

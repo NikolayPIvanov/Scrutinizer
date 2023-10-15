@@ -8,7 +8,6 @@ import {
   IKsqlConfiguration,
   ILoggingConfiguration,
   INetworkConfiguration,
-  IRedisConfiguration,
   IValidatorConfiguration,
 } from './configuration.interfaces';
 
@@ -19,7 +18,6 @@ export class Configuration implements IConfiguration {
   logging: ILoggingConfiguration;
   kafka: IKafkaConfiguration;
   network: INetworkConfiguration;
-  redis: IRedisConfiguration;
   ksql: IKsqlConfiguration;
   validator: IValidatorConfiguration;
 
@@ -33,7 +31,6 @@ export class Configuration implements IConfiguration {
     this.logging = configuration.logging;
     this.kafka = configuration.kafka;
     this.network = configuration.network;
-    this.redis = configuration.redis;
     this.ksql = configuration.ksql;
     this.validator = configuration.validator;
   }
@@ -50,16 +47,23 @@ export class Configuration implements IConfiguration {
       clientId: process.env.KAFKA_CLIENT_ID!,
       brokers: process.env.KAFKA_BROKERS?.split(',') || [],
       topics: {
-        blocks: process.env.BLOCKS_TOPIC!,
-        forks: process.env.FORKED_BLOCKS_TOPIC!,
-        confirmed: process.env.CONFIRMED_BLOCKS_TOPIC!,
-        fullBlock: process.env.FULL_BLOCKS_TOPIC!,
-        fullBlockRetry: process.env.FULL_RETRY_BLOCKS_TOPIC!,
-        fullBlockDlq: process.env.FULL_DLQ_BLOCKS_TOPIC!,
-      },
-      groups: {
-        fullBlock: process.env.FULL_BLOCKS_TOPIC_CONSUMER_GROUP!,
-        retryFullBlock: process.env.FULL_RETRY_BLOCKS_TOPIC_CONSUMER_GROUP!,
+        blockNumbers: {
+          name: process.env.BLOCKS_TOPIC_NAME!,
+          maxBytesPerPartition:
+            +process.env.BLOCKS_TOPIC_MAX_BYTES_PER_PARTITION! || 1048576,
+        },
+        forked: {
+          name: process.env.FORKED_BLOCKS_TOPIC_NAME!,
+          maxBytesPerPartition:
+            +process.env.FORKED_BLOCKS_TOPIC_MAX_BYTES_PER_PARTITION! ||
+            1048576,
+        },
+        confirmed: {
+          name: process.env.CONFIRMED_BLOCKS_TOPIC_NAME!,
+          maxBytesPerPartition:
+            +process.env.CONFIRMED_BLOCKS_TOPIC_MAX_BYTES_PER_PARTITION! ||
+            1048576,
+        },
       },
     },
     network: {
@@ -71,9 +75,6 @@ export class Configuration implements IConfiguration {
       maxProviderCount: +process.env.MAX_PROVIDER_COUNT!,
       maxRequestTime: +process.env.MAX_REQUEST_TIME!,
       refreshProvidersInterval: +process.env.REFRESH_PROVIDERS_INTERVAL!,
-    },
-    redis: {
-      url: process.env.REDIS_URL!,
     },
     ksql: {
       host: process.env.KSQL_HOST || 'http://localhost',

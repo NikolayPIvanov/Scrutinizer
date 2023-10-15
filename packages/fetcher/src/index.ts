@@ -3,50 +3,50 @@ import {infrastructure} from 'scrutinizer-infrastructure';
 
 import 'reflect-metadata';
 
-import {ContainerInstance} from './injection/Container';
-import {TYPES} from './injection/types';
-import {IDbQueries} from './ksql/ksql.interfaces';
+import {ContainerInstance, TYPES} from './injection';
+import {IDbQueries} from './ksql';
 import {
   INodeStorageRepository,
   IProvider,
   IProviderConfigurationMerger,
-} from './provider/provider.interfaces';
-import {IValidator} from './validators/validator.interfaces';
+} from './provider';
+import {IValidator} from './validators';
 
 (async () => {
   const container = new ContainerInstance();
+
+  await bootstrapInfrastructure(container);
+  await createProvider(container);
+
+  container.get<IValidator>(TYPES.IValidator);
+})();
+
+async function bootstrapInfrastructure(container: ContainerInstance) {
   const kafkaClient = container.get<infrastructure.messaging.IKafkaClient>(
     TYPES.IKafkaClient
   );
   const ksqldb = container.get<infrastructure.ksql.IKsqldb>(TYPES.IKsqlDb);
-  const dbQueries = container.get<IDbQueries>(TYPES.IDbQueries);
-  const redis = container.get<infrastructure.caching.redis.IRedisClient>(
-    TYPES.IRedisClient
-  );
-  const logger = container.get<infrastructure.logging.ILogger>(TYPES.ILogger);
-
-  await kafkaClient.bootstrap();
-  await ksqldb.client.connect();
-  await redis.connect();
-
-  container.get<IValidator>(TYPES.IValidator);
-
   const nodeStorageRepository = container.get<INodeStorageRepository>(
     TYPES.INodeStorageRepository
   );
+
+  await kafkaClient.bootstrap();
+  await ksqldb.client.connect();
+  await nodeStorageRepository.init();
+}
+
+async function createProvider(container: ContainerInstance) {
   const providerConfigurationMerger =
     container.get<IProviderConfigurationMerger>(
       TYPES.IProviderConfigurationMerger
     );
-  const provider = container.get<IProvider>(TYPES.IProvider);
+  const dbQueries = container.get<IDbQueries>(TYPES.IDbQueries);
 
-  await nodeStorageRepository.init();
   const configuration = await providerConfigurationMerger.mergeConfigurations();
+  const provider = container.get<IProvider>(TYPES.IProvider);
 
   const latestCommittedBlockNumber =
     await dbQueries.getLatestCommittedBlockNumber();
-  // const cacheLastCommittedBlockNumber = await redis.get('lastCommittedBlockNumber')
-  logger.info(latestCommittedBlockNumber, 'latestCommittedBlockNumber');
 
   await provider.initialize(configuration, latestCommittedBlockNumber);
-})();
+}

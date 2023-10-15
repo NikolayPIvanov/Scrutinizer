@@ -2,21 +2,17 @@ export interface IKafkaConfiguration {
   clientId: string | undefined;
   brokers: string[];
   topics: ITopicsConfiguration;
-  groups: IGroupConfiguration;
 }
 
-export interface IGroupConfiguration {
-  fullBlock: string;
-  retryFullBlock: string;
+export interface ITopicConfiguration {
+  name: string;
+  maxBytesPerPartition?: number;
 }
 
 export interface ITopicsConfiguration {
-  blocks: string;
-  forks: string;
-  confirmed: string;
-  fullBlock: string;
-  fullBlockRetry: string;
-  fullBlockDlq: string;
+  blockNumbers: ITopicConfiguration;
+  forked: ITopicConfiguration;
+  confirmed: ITopicConfiguration;
 }
 
 export interface ILoggingConfiguration {
@@ -33,10 +29,6 @@ export interface INetworkConfiguration {
   refreshProvidersInterval: number;
 }
 
-export interface IRedisConfiguration {
-  url: string;
-}
-
 export interface IKsqlConfiguration {
   host: string;
   port: number;
@@ -48,7 +40,6 @@ export interface IValidatorConfiguration {
 }
 
 export interface IConfiguration {
-  redis: IRedisConfiguration;
   logging: ILoggingConfiguration;
   kafka: IKafkaConfiguration;
   network: INetworkConfiguration;
