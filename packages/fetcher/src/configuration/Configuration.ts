@@ -9,6 +9,7 @@ import {
   ILoggingConfiguration,
   INetworkConfiguration,
   IRedisConfiguration,
+  IValidatorConfiguration,
 } from './configuration.interfaces';
 
 dotenv.config();
@@ -19,6 +20,8 @@ export class Configuration implements IConfiguration {
   kafka: IKafkaConfiguration;
   network: INetworkConfiguration;
   redis: IRedisConfiguration;
+  ksql: IKsqlConfiguration;
+  validator: IValidatorConfiguration;
 
   constructor(
     @inject(TYPES.IConfigurationValidationSchema)
@@ -32,10 +35,14 @@ export class Configuration implements IConfiguration {
     this.network = configuration.network;
     this.redis = configuration.redis;
     this.ksql = configuration.ksql;
+    this.validator = configuration.validator;
   }
-  ksql: IKsqlConfiguration;
 
   private getConfiguration = () => ({
+    validator: {
+      blocksThreshold: +process.env.VALIDATOR_BLOCKS_THRESHOLD!,
+      validatorInterval: +process.env.VALIDATOR_INTERVAL!,
+    },
     logging: {
       level: process.env.LOG_LEVEL!,
     },

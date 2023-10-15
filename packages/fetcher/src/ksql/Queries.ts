@@ -26,4 +26,25 @@ export class DbQueries implements IDbQueries {
 
     return (rows[0] as ILastCommittedRow).BLOCKNUMBER;
   }
+
+  async getBlocks(after?: number): Promise<any[]> {
+    const query = after
+      ? `SELECT * FROM blocks_traces WHERE BLOCKNUMBER > ${after};`
+      : 'SELECT * FROM blocks_traces;';
+
+    const {data, error} = await this.ksql.client.query(query);
+    if (!data) {
+      throw error;
+    }
+
+    const {rows} = data;
+
+    return (
+      rows?.map((row: any) => ({
+        number: row.blockNumber,
+        hash: row.hash,
+        parentHash: row.parentHash,
+      })) || []
+    );
+  }
 }

@@ -9,9 +9,9 @@ CREATE STREAM blocks_full (
   hash varchar,
   miner varchar,
   nonce varchar,
-  `number` varchar,
+  `blockNumber` int,
   parentHash varchar,
-  `timestamp` varchar
+  `blockTimestamp` int
   )
   WITH (
     kafka_topic='scrutinizer.full.blocks',
@@ -19,12 +19,12 @@ CREATE STREAM blocks_full (
     partitions=10);
 
 CREATE TABLE blocks_traces AS
-  SELECT `number`,
-         LATEST_BY_OFFSET(parentHash) AS parentHash,
-         LATEST_BY_OFFSET(hash) AS hash,
-         LATEST_BY_OFFSET(`timestamp`) AS `timestamp`
+  SELECT `blockNumber`,
+         LATEST_BY_OFFSET(parentHash) AS `parentHash`,
+         LATEST_BY_OFFSET(hash) AS `hash`,
+         LATEST_BY_OFFSET(`blockTimestamp`) AS `timestamp`
   FROM blocks_full
-  GROUP BY `number`
+  GROUP BY `blockNumber`
   EMIT CHANGES;
 
 

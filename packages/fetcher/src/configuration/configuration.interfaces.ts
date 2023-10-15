@@ -42,12 +42,18 @@ export interface IKsqlConfiguration {
   port: number;
 }
 
+export interface IValidatorConfiguration {
+  blocksThreshold: number;
+  validatorInterval: number;
+}
+
 export interface IConfiguration {
   redis: IRedisConfiguration;
   logging: ILoggingConfiguration;
   kafka: IKafkaConfiguration;
   network: INetworkConfiguration;
   ksql: IKsqlConfiguration;
+  validator: IValidatorConfiguration;
 }
 
 export interface IConfigurationValidationSchema {

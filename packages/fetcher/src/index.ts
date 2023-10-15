@@ -11,7 +11,7 @@ import {
   IProvider,
   IProviderConfigurationMerger,
 } from './provider/provider.interfaces';
-import {IBlockRoot, IValidator} from './validators/Validator';
+import {IValidator} from './validators/validator.interfaces';
 
 (async () => {
   const container = new ContainerInstance();
@@ -24,11 +24,12 @@ import {IBlockRoot, IValidator} from './validators/Validator';
     TYPES.IRedisClient
   );
   const logger = container.get<infrastructure.logging.ILogger>(TYPES.ILogger);
-  const validator = container.get<IValidator>(TYPES.IValidator);
 
   await kafkaClient.bootstrap();
   await ksqldb.client.connect();
   await redis.connect();
+
+  container.get<IValidator>(TYPES.IValidator);
 
   const nodeStorageRepository = container.get<INodeStorageRepository>(
     TYPES.INodeStorageRepository
@@ -48,7 +49,4 @@ import {IBlockRoot, IValidator} from './validators/Validator';
   logger.info(latestCommittedBlockNumber, 'latestCommittedBlockNumber');
 
   await provider.initialize(configuration, latestCommittedBlockNumber);
-
-  const blocks = await redis.hScanAndGetAll<IBlockRoot>();
-  blocks.forEach(block => validator.push(block));
 })();

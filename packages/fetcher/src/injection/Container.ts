@@ -6,8 +6,6 @@ import {
   IConfigurationValidationSchema,
 } from '../configuration';
 
-import {FullBlockConsumer} from '../messaging/FullBlockConsumer';
-import {FullBlockRetryConsumer} from '../messaging/FullBlockRetryConsumer';
 import {NodeStorageRepository} from '../provider/NodeStorageRepository';
 import {Provider} from '../provider/Provider';
 import {ProviderConfigurationMerger} from '../provider/ProviderConfigurationMerger';
@@ -23,13 +21,14 @@ import {
   IChainRpcUrlPair,
   IScrapper,
 } from '../provider/scrapers/scraper.interfaces';
-import {IValidator, Validator} from '../validators/Validator';
+import {IValidator} from '../validators/validator.interfaces';
 import {TYPES} from './types';
 
 // eslint-disable-next-line node/no-extraneous-import
 import {infrastructure} from 'scrutinizer-infrastructure';
 import {DbQueries} from '../ksql/Queries';
 import {IDbQueries} from '../ksql/ksql.interfaces';
+import {Validator} from '../validators/Validator';
 
 export class ContainerInstance extends Container {
   constructor() {
@@ -93,18 +92,6 @@ export class ContainerInstance extends Container {
       .toDynamicValue(() => new infrastructure.messaging.CommitManager())
       .inTransientScope();
 
-    this.bind<infrastructure.messaging.IConsumerInstance>(
-      TYPES.IConsumerInstance
-    )
-      .to(FullBlockConsumer)
-      .inSingletonScope();
-
-    this.bind<infrastructure.messaging.IConsumerInstance>(
-      TYPES.IConsumerInstance
-    )
-      .to(FullBlockRetryConsumer)
-      .inSingletonScope();
-
     this.bind<infrastructure.caching.redis.IRedisClient>(TYPES.IRedisClient)
       .toDynamicValue((context: interfaces.Context) => {
         const configuration = context.container.get<IConfiguration>(
@@ -126,7 +113,5 @@ export class ContainerInstance extends Container {
       .inSingletonScope();
 
     this.bind<IDbQueries>(TYPES.IDbQueries).to(DbQueries).inSingletonScope();
-
-    this.getAll(TYPES.IConsumerInstance);
   }
 }

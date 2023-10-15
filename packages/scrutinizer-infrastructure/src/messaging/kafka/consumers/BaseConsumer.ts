@@ -13,8 +13,6 @@ import {
   IExtendedKafkaMessage,
 } from './consumers.interface';
 
-const KEY_VALUE = '1';
-
 @injectable()
 export class BaseConsumer implements IConsumerInstance {
   private ready = false;
@@ -32,15 +30,7 @@ export class BaseConsumer implements IConsumerInstance {
     protected commitManager: ICommitManager,
     protected logger: ILogger,
     protected redis: IRedisClient
-  ) {
-    this.commitManager.onRecordRemoved(
-      async (message: IExtendedKafkaMessage) => {
-        await this.redis.del([
-          `${message.topic}:${message.partition}:${message.offset}`,
-        ]);
-      }
-    );
-  }
+  ) {}
 
   public initialize = async (
     bootstrapConfiguration: IConsumerBootstrapConfiguration
@@ -195,12 +185,7 @@ export class BaseConsumer implements IConsumerInstance {
     configuration: IConsumerConfiguration,
     handler?: (message: IExtendedKafkaMessage) => Promise<void>
   ) {
-    const key = `${extendedKafkaMessage.topic}:${extendedKafkaMessage.partition}:${extendedKafkaMessage.offset}`;
-    const value = await this.redis.get(key);
-    if (value) {
-      return;
-    }
-
+    let error = null;
     try {
       if (!handler) {
         throw new Error('No handler provided');
@@ -208,17 +193,17 @@ export class BaseConsumer implements IConsumerInstance {
 
       const alreadyProcessing =
         this.commitManager.notifyStartProcessing(extendedKafkaMessage);
-      if (alreadyProcessing) return;
+      if (alreadyProcessing) {
+        return;
+      }
 
-      const [, error] = await to(handler(extendedKafkaMessage));
+      [, error] = await to(handler(extendedKafkaMessage));
       if (error && this.onErrorHandler) {
         this.onErrorHandler(error);
-        await this.redis.del([key]);
         await this.retryMessage(extendedKafkaMessage, configuration);
       }
     } finally {
       this.commitManager.notifyFinishedProcessing(extendedKafkaMessage);
-      await this.redis.set(key, KEY_VALUE);
     }
   }
 
@@ -237,13 +222,21 @@ export class BaseConsumer implements IConsumerInstance {
         `Message exceeded retry limit: ${extendedKafkaMessage.topic}:${extendedKafkaMessage.partition}:${extendedKafkaMessage.offset}`
       );
 
-      return to(
+      const [, error] = await to(
         this.kafkaClient.producer.send({
           compression: CompressionTypes.GZIP,
           topic: configuration.dlqTopic,
           messages: [extendedKafkaMessage],
         })
       );
+
+      if (error) {
+        this.logger.error(
+          `Error has occurred while trying to produce to DLQ topic ${extendedKafkaMessage.topic}: ${error}`
+        );
+      }
+
+      return;
     }
 
     const [, error] = await to(

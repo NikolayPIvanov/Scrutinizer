@@ -23,7 +23,7 @@ const client = new KsqldbClient({
       hash: HASH,
       timestamp: parseInt(timestamp, 16),
     }))
-    .filter((block) => block.number > 48642579);
+    .filter((block) => block.number > 48704477);
 
   transformed.sort((a, b) => a.number - b.number);
 

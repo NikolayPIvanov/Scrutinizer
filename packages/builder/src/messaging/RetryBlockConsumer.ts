@@ -36,7 +36,7 @@ export class RetryBlockConsumer extends infrastructure.messaging.BaseConsumer {
         autoCommit: false,
         fromBeginning: true,
         retryTopic: configuration.kafka.topics.blocksRetry.name,
-        retryThreshold: 3,
+        retryThreshold: 300,
         dlqTopic: configuration.kafka.topics.blocksDlq.name,
       },
       onMessageHandler: this.handle.bind(this),

@@ -9,6 +9,7 @@ import {
   INetworkConfiguration,
   IRedisConfiguration,
   ITopicsConfiguration,
+  IValidatorConfiguration,
 } from './configuration.interfaces';
 import joi = require('joi');
 
@@ -42,6 +43,11 @@ const ksqlDbSchema = joi.object<IKsqlConfiguration>().keys({
   port: joi.number().required(),
 });
 
+const validatorSchema = joi.object<IValidatorConfiguration>().keys({
+  blocksThreshold: joi.number().required(),
+  validatorInterval: joi.number().required(),
+});
+
 const kafkaSchema = joi.object<IKafkaConfiguration>().keys({
   clientId: joi.string().required(),
   brokers: joi.array().required().min(1),
@@ -67,6 +73,7 @@ const configurationSchema = joi
     network: networkSchema,
     redis: redisSchema,
     ksql: ksqlDbSchema,
+    validator: validatorSchema,
   })
   .unknown();
 
