@@ -235,6 +235,10 @@ export class Provider implements IProvider {
     const pivot = this.lastSentNumber || blockNumber;
     const lag = blockNumber - pivot;
     const blocksPerIteration = Math.min(lag, maxBlocksPerIteration);
+    if (blocksPerIteration === 0) {
+      this.lastSentNumber = blockNumber;
+      return;
+    }
 
     const blockNumbers = this.constructConsequentArray(
       blocksPerIteration,
