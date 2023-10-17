@@ -16,7 +16,7 @@ CREATE STREAM blocks_full (
   WITH (
     kafka_topic='scrutinizer.full.blocks',
     value_format='json',
-    partitions=10);
+    partitions=1);
 
 CREATE TABLE blocks_traces AS
   SELECT `blockNumber`,

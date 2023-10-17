@@ -15,28 +15,6 @@ import {
 import {ITransformedExtendedRpcInstance} from './scrapers/scraper.interfaces';
 import {requestMultiplePromisesWithTimeout} from './utils';
 
-type Success<T> = {
-  error: false;
-  value: T;
-};
-
-type Failure<U> = {
-  error: true;
-  value: U;
-};
-
-type Result<T, U> = Success<T> | Failure<U>;
-
-const successful = <T>(value: T): Success<T> => ({
-  error: false,
-  value,
-});
-
-const failure = <T>(value: T): Failure<T> => ({
-  error: true,
-  value,
-});
-
 export const getConsensusValue = (arr: number[]): number => {
   const frequency = new Map();
   let maxCount = 0;
@@ -224,12 +202,10 @@ export class Provider implements IProvider {
    */
   async calculateBlockLagAndLatestBlock() {
     // Get the block number from the providers.
-    const blockNumberOrError = await this.getBlockNumber();
-    if (blockNumberOrError.error) {
+    const blockNumber = await this.getBlockNumber();
+    if (!blockNumber) {
       return;
     }
-
-    const blockNumber = blockNumberOrError.value;
 
     // Set the pivot so we can have a starting point for the block lag calculation.
     const pivot = this.lastSentNumber || blockNumber;
@@ -256,7 +232,7 @@ export class Provider implements IProvider {
     this.lastSentNumber = blockNumbers[blockNumbers.length - 1];
   }
 
-  private async getBlockNumber(): Promise<Result<number, Error>> {
+  private async getBlockNumber(): Promise<number | null> {
     const promises = this.currentProviders.map(provider =>
       provider.getBlockNumber()
     );
@@ -266,15 +242,19 @@ export class Provider implements IProvider {
     );
 
     if (success.length === 0) {
-      return failure(Error('No valid block number found'));
+      this.logger.error('No valid block number found');
+
+      return null;
     }
 
     const block = getConsensusValue(success);
     if (!block) {
-      return failure(Error('No valid block number found'));
+      this.logger.error('No valid block number found');
+
+      return null;
     }
 
-    return successful(block);
+    return block;
   }
 
   private constructConsequentArray = (length: number, start: number) => {

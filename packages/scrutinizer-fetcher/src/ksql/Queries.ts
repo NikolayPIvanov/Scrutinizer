@@ -44,7 +44,7 @@ export class DbQueries implements IDbQueries {
    */
   public async getBlocks(after?: number): Promise<IBlockTrace[]> {
     const query = after
-      ? `SELECT * FROM blocks_traces WHERE BLOCKNUMBER > ${after};`
+      ? 'SELECT * FROM blocks_traces WHERE `blockNumber` > ' + after + ';'
       : 'SELECT * FROM blocks_traces;';
 
     const {data, error} = await this.ksql.client.query(query);

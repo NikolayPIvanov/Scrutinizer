@@ -42,6 +42,7 @@ export class NextBlockConsumer extends infrastructure.messaging.BaseConsumer {
   }
 
   public handle = async (message: IExtendedKafkaMessage) => {
+    this.logger.info(`Handling message ${message.offset}`);
     const blockNumber = validate(message);
 
     await getBlockAndBroadcast({
