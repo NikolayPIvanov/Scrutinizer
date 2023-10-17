@@ -22,7 +22,7 @@ export class DbQueries implements IDbQueries {
    */
   public async getLatestCommittedBlockNumber(): Promise<number> {
     const {data, error} = await this.ksql.client.query(
-      'SELECT * FROM latest_block_number;'
+      'SELECT * FROM `committed_block_numbers`;'
     );
     if (!data) {
       throw error;
@@ -34,7 +34,7 @@ export class DbQueries implements IDbQueries {
       return 0;
     }
 
-    return (rows[0] as ILastCommittedRow).BLOCKNUMBER;
+    return (rows[0] as ILastCommittedRow).blockNumber;
   }
 
   /**

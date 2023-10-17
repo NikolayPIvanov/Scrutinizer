@@ -16,5 +16,5 @@ export interface IRawBlock {
 }
 
 export interface ILastCommittedRow {
-  BLOCKNUMBER: number;
+  blockNumber: number;
 }
