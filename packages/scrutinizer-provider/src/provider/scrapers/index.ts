@@ -1,41 +1,30 @@
+import {ChainIdScrapper} from './ChainIdScrapper';
+import {ChainRpcScrapper} from './ChainRpcScrapper';
+import {ProviderConfigurationMerger} from './ProviderConfigurationMerger';
+
 import {
-  ChainIdScrapper,
-  ChainRpcScrapper,
-  EvmApi,
   IChainIdNamePair,
   IChainRpcUrlPair,
-  IEvmApi,
   IExtendedChainRpcUrlPair,
   IExtendedRpcInstance,
-  INodeStorageRepository,
-  IProvider,
   IProviderConfigurationMerger,
   IRpcDetails,
   IRpcInstance,
   IScrapper,
   ITransformedExtendedRpcInstance,
-  NodeStorageRepository,
-  Provider,
-  ProviderConfigurationMerger,
-} from './provider';
+} from './scraper.interfaces';
 
 export {
   ChainIdScrapper,
   ChainRpcScrapper,
-  EvmApi,
   IChainIdNamePair,
   IChainRpcUrlPair,
-  IEvmApi,
   IExtendedChainRpcUrlPair,
   IExtendedRpcInstance,
-  INodeStorageRepository,
-  IProvider,
   IProviderConfigurationMerger,
   IRpcDetails,
   IRpcInstance,
   IScrapper,
   ITransformedExtendedRpcInstance,
-  NodeStorageRepository,
-  Provider,
   ProviderConfigurationMerger,
 };
