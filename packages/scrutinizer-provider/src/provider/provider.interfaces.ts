@@ -1,5 +1,55 @@
-import {RpcNodes} from './NodeStorageRepository';
 import {ITransformedExtendedRpcInstance} from './scrapers/scraper.interfaces';
+
+export interface IBlockRetrieval {
+  getFullBlock(
+    blockNumber: number,
+    maxRequestTime?: number,
+    forcedProvider?: IEvmApi
+  ): Promise<IFullJsonRpcBlock | null>;
+  getBlockNumber(maxRequestTime?: number): Promise<number | null>;
+}
+
+export interface IEvmApiFactory {
+  create(
+    repository: INodeStorageRepository,
+    configuration: IRpcInstanceMetadata
+  ): Promise<IEvmApi>;
+}
+export interface IProviderChainLagAndBlock {
+  blockLag: number;
+  lastCommitted: number;
+}
+
+export interface IProviderManagement {
+  initialize(
+    providerRpcConfiguration: ITransformedExtendedRpcInstance,
+    lastCommitted: number,
+    refreshProvidersInterval: number,
+    blockLagThreshold: number,
+    blockTime: number,
+    checkBlockLagIntervalMultiplier: number
+  ): Promise<void>;
+}
+
+export interface IProviderConfigurator {
+  providers: IEvmApi[];
+  prepareProviders(
+    configuration: ITransformedExtendedRpcInstance,
+    maxProviderCount?: number
+  ): Promise<void>;
+  refreshProviders(latencyBelow?: number): Promise<void>;
+}
+
+export interface IRpcNode {
+  rpcAddress: string;
+  chainName: string;
+  chainId: number;
+  totalRequest: number;
+  errorCount: number;
+  successRate: number;
+  rateLimit: number;
+  latency: number;
+}
 
 export interface IRpcInstanceMetadata {
   endpoint: string;
@@ -21,10 +71,9 @@ export interface IJsonRpcResponse<T> {
 }
 
 export interface INodeStorageRepository {
-  init(): Promise<void>;
-  findStartNodes(chainId: number): Promise<RpcNodes[]>;
-  findAll(): Promise<RpcNodes[]>;
-  upsert(node: RpcNodes, update?: number): void;
+  findStartNodes(chainId: number): Promise<IRpcNode[]>;
+  findAll(): Promise<IRpcNode[]>;
+  upsert(node: IRpcNode): void;
 }
 
 export interface IEvmApi {
@@ -33,7 +82,7 @@ export interface IEvmApi {
   totalRequests: number;
   rateLimited: number;
   rpcInstanceMetadata?: IRpcInstanceMetadata;
-  getFullBlock(blockNumber: number): Promise<any>;
+  getFullBlock(blockNumber: number): Promise<IFullJsonRpcBlock | null>;
   getChainId(): Promise<number>;
   getBlockNumber(): Promise<number>;
   getBlock(blockNumber?: number): Promise<any>;
@@ -45,7 +94,6 @@ export interface IProvider {
     providerRpcConfiguration: ITransformedExtendedRpcInstance,
     lastCommitted?: number
   ) => Promise<void>;
-  getFullBlock(blockNumber: number, forcedProvider?: IEvmApi): Promise<any>;
 }
 
 /*

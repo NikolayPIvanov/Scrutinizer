@@ -1,45 +1,7 @@
 import Database = require('better-sqlite3');
 import {injectable} from 'inversify';
-import {
-  Column,
-  DataSource,
-  Entity,
-  Index,
-  LessThanOrEqual,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import {DataSource, LessThanOrEqual} from 'typeorm';
 import {INodeStorageRepository} from './provider.interfaces';
-
-@Entity()
-@Index(['rpcAddress'], {unique: true})
-export class RpcNodes {
-  @PrimaryGeneratedColumn()
-  id?: number;
-
-  @Column()
-  chainName!: string;
-
-  @Column()
-  chainId!: number;
-
-  @Column({default: 0})
-  totalRequest!: number;
-
-  @Column({default: 1, type: 'float'})
-  successRate!: number;
-
-  @Column()
-  rpcAddress!: string;
-
-  @Column()
-  latency!: number;
-
-  @Column()
-  errorCount!: number;
-
-  @Column()
-  rateLimit!: number;
-}
 
 @injectable()
 export class NodeStorageRepository implements INodeStorageRepository {

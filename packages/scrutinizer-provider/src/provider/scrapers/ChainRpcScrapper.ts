@@ -1,7 +1,7 @@
 /* eslint-disable node/no-extraneous-import */
 import axios, {AxiosInstance} from 'axios';
 import {injectable} from 'inversify';
-import {ILoggerLike, to} from '../common';
+import {ILoggerLike, to} from '../../common';
 import {
   DEFI_LLAMA_GITHUB_BASE_URL,
   FALLBACK_RPC_GITHUB_RPC_URL,

@@ -6,7 +6,6 @@ import {inject, injectable} from 'inversify';
 import {CompressionTypes} from 'kafkajs';
 import {IConfiguration} from '../configuration';
 import {TYPES} from '../injection/types';
-import {EvmApi} from './EvmApi';
 import {
   IEvmApi,
   INodeStorageRepository,
@@ -66,43 +65,6 @@ export class Provider implements IProvider {
 
     this.start(lastCommitted);
   };
-
-  private async loadProviders() {
-    if (this.providerRpcConfiguration === undefined) {
-      throw new Error('Missing configuration');
-    }
-
-    const providers = this.providerRpcConfiguration?.rpcs!.map(
-      rpc =>
-        new EvmApi(this.nodeStorageRepository, {
-          endpoint: rpc,
-          chainId: this.providerRpcConfiguration!.chainId!,
-          chainName: this.providerRpcConfiguration!.name!,
-        }) as unknown as IEvmApi
-    );
-
-    this.allAvailableProviders = await Promise.all(
-      providers?.map(async provider => {
-        if (
-          this.currentProviders.length >=
-          this.configuration.network.maxProviderCount
-        ) {
-          return provider;
-        }
-
-        const [chainId, error] = await to(provider.getChainId());
-        if (error) {
-          return provider;
-        }
-
-        if (chainId === this.providerRpcConfiguration?.chainId) {
-          this.currentProviders.push(provider);
-        }
-
-        return provider;
-      })
-    );
-  }
 
   private async start(lastCommitted: number) {
     await this.initializeBlockTimeCalculation(lastCommitted);
@@ -282,45 +244,4 @@ export class Provider implements IProvider {
 
     this.logger.info(`Successfully sent ${blocks.join(' ')} block numbers`);
   };
-
-  private async refreshProviders() {
-    try {
-      const availableProviders = this.allAvailableProviders.filter(
-        e => !this.currentProviders.find(k => k.endpointUrl === e.endpointUrl)
-      );
-
-      if (availableProviders.length < 1) {
-        return;
-      }
-
-      if (
-        this.currentProviders.filter(e => e.errorCount > 0 || e.latency > 500)
-          .length === 0
-      ) {
-        return;
-      }
-
-      this.currentProviders.sort((a, b) => a.errorCount - b.errorCount);
-
-      const nextProvider = availableProviders[0];
-
-      const [, error] = await to(nextProvider.getBlock());
-      if (error) {
-        return;
-      }
-
-      const [chainId, err] = await to(nextProvider.getChainId());
-      if (err) {
-        return;
-      }
-
-      if (chainId === this.providerRpcConfiguration?.chainId) {
-        this.currentProviders.pop();
-
-        this.currentProviders.push(nextProvider);
-      }
-    } catch (error: unknown) {
-      this.logger.error(`${(error as any).message!}`);
-    }
-  }
 }

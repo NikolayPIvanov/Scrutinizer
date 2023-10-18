@@ -1,4 +1,2 @@
-import {Logger} from './Logger';
-import {ILogger} from './logger.interfaces';
-
-export {ILogger, Logger};
+export {Logger} from './Logger';
+export {ILogger, ILoggerConfiguration} from './logger.interfaces';

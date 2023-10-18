@@ -1,4 +1,2 @@
-import {Ksqldb} from './Ksqldb';
-import {IKsqldb} from './ksqldb.interfaces';
-
-export {IKsqldb, Ksqldb};
+export {Ksqldb} from './Ksqldb';
+export {ClientOptions, IKsqldb} from './ksqldb.interfaces';

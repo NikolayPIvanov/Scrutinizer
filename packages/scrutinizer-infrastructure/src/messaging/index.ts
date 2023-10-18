@@ -1,12 +1,3 @@
-import {
-  BaseConsumer,
-  CommitManager,
-  ICommitManager,
-  IConsumerInstance,
-  IKafkaClient,
-  KafkaClient,
-} from './kafka';
-
 export {
   BaseConsumer,
   CommitManager,
@@ -14,4 +5,4 @@ export {
   IConsumerInstance,
   IKafkaClient,
   KafkaClient,
-};
+} from './kafka';

@@ -1,5 +1,5 @@
 import {EvmApi} from './EvmApi';
-import {NodeStorageRepository} from './NodeStorageRepository';
+import {MemoryNodeStorageRepository} from './MemoryNodeStorageRepository';
 import {Provider} from './Provider';
 import {
   IEvmApi,
@@ -37,7 +37,7 @@ export {
   IRpcInstance,
   IScrapper,
   ITransformedExtendedRpcInstance,
-  NodeStorageRepository,
+  MemoryNodeStorageRepository as NodeStorageRepository,
   Provider,
   ProviderConfigurationMerger,
 };

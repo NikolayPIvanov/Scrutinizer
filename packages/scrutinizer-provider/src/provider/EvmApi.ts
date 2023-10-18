@@ -1,5 +1,5 @@
 import axios, {AxiosResponse} from 'axios';
-import {requestPromisesWithTimeout, to} from './common';
+import {requestPromisesWithTimeout, to} from '../common';
 import {
   IEvmApi,
   IFullJsonRpcBlock,
@@ -23,7 +23,7 @@ export class EvmApi implements IEvmApi {
   public rpcInstanceMetadata?: IRpcInstanceMetadata;
 
   constructor(
-    private storageRepository: INodeStorageRepository,
+    private nodeStorageRepository: INodeStorageRepository,
     rpcInstance: IRpcInstanceMetadata
   ) {
     this.rpcInstanceMetadata = rpcInstance;
@@ -294,7 +294,7 @@ export class EvmApi implements IEvmApi {
         this.requestTimes.reduce((sum, t) => sum + t, 0) /
           this.requestTimes.length || 0;
 
-      await this.storageRepository.upsert({
+      await this.nodeStorageRepository.upsert({
         chainName: this.rpcInstanceMetadata!.chainName,
         chainId: this.rpcInstanceMetadata!.chainId,
         totalRequest: this.totalRequests,

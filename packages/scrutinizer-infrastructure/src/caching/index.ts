@@ -1,3 +1,1 @@
-import * as redis from './redis';
-
-export {redis};
+export * as redis from './redis';

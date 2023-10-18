@@ -7,7 +7,7 @@ import {
   MAIN_GITHUB_RPC_URL,
 } from './scarper.constants';
 
-import {ILoggerLike, to} from '../common';
+import {ILoggerLike, to} from '../../common';
 import {IChainIdNamePair, IScrapper} from './scraper.interfaces';
 
 @injectable()

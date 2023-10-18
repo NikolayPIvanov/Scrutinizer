@@ -1,3 +1,1 @@
-import * as infrastructure from './infrastructure';
-
-export {infrastructure};
+export * as infrastructure from './infrastructure';
