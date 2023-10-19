@@ -5,11 +5,6 @@ import 'reflect-metadata';
 
 import {ContainerInstance, TYPES} from './injection';
 import {IDbQueries} from './ksql';
-import {
-  INodeStorageRepository,
-  IProvider,
-  IProviderConfigurationMerger,
-} from './provider';
 import {IValidator} from './validators';
 
 (async () => {
@@ -26,6 +21,7 @@ async function bootstrapInfrastructure(container: ContainerInstance) {
     TYPES.IKafkaClient
   );
   const ksqldb = container.get<infrastructure.ksql.IKsqldb>(TYPES.IKsqlDb);
+
   const nodeStorageRepository = container.get<INodeStorageRepository>(
     TYPES.INodeStorageRepository
   );

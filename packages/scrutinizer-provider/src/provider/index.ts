@@ -1,14 +1,19 @@
 export {EvmApi} from './EvmApi';
 export {Provider} from './Provider';
+export {ProviderConfigurator} from './ProviderConfigurator';
 export {
   IEvmApi,
   INodeStorageRepository,
   IProvider,
 } from './provider.interfaces';
+
+export {BlockRetrieval} from './BlockRetrieval';
+export {ProviderManagement} from './ProviderManagement';
+export {DefaultEvmApiFactory} from './factories';
 export {MemoryNodeStorageRepository} from './repositories/MemoryNodeStorageRepository';
 export {
-  ChainIdScrapper,
-  ChainRpcScrapper,
+  DefaultChainIdScrapper,
+  DefaultChainRpcScrapper,
   IChainIdNamePair,
   IChainRpcUrlPair,
   IExtendedChainRpcUrlPair,

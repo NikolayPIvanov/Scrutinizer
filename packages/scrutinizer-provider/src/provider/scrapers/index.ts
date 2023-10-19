@@ -1,5 +1,5 @@
-export {ChainIdScrapper} from './ChainIdScrapper';
-export {ChainRpcScrapper} from './ChainRpcScrapper';
+export {DefaultChainIdScrapper} from './DefaultChainIdScrapper';
+export {DefaultChainRpcScrapper} from './DefaultChainRpcScrapper';
 export {ProviderConfigurationMerger} from './ProviderConfigurationMerger';
 
 export {

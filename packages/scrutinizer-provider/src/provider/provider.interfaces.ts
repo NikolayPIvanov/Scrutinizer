@@ -15,6 +15,14 @@ export interface IEvmApiFactory {
     configuration: IRpcInstanceMetadata
   ): Promise<IEvmApi>;
 }
+
+export interface IEvmApiFactory {
+  create(
+    repository: INodeStorageRepository,
+    configuration: IRpcInstanceMetadata
+  ): Promise<IEvmApi>;
+}
+
 export interface IProviderChainLagAndBlock {
   blockLag: number;
   lastCommitted: number;

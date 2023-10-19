@@ -1,4 +1,3 @@
-import {injectable} from 'inversify';
 import {
   IChainIdNamePair,
   IChainRpcUrlPair,
@@ -9,7 +8,6 @@ import {
   ITransformedExtendedRpcInstance,
 } from './scraper.interfaces';
 
-@injectable()
 export class ProviderConfigurationMerger
   implements IProviderConfigurationMerger
 {

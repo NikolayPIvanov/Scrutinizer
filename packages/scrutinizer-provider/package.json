@@ -1,5 +1,5 @@
 {
-  "name": "provider",
+  "name": "scrutinizer-provider",
   "version": "1.0.0",
   "description": "Provider to make JSON RPC calls to the list of nodes",
   "main": "build/src/index.js",

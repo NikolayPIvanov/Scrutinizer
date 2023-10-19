@@ -1,4 +1,4 @@
-import {Container, interfaces} from 'inversify';
+import {Container} from 'inversify';
 import {
   Configuration,
   ConfigurationValidationSchema,
@@ -11,29 +11,16 @@ import {TYPES} from './types';
 // eslint-disable-next-line node/no-extraneous-import
 import {infrastructure} from 'scrutinizer-infrastructure';
 import {DbQueries, IDbQueries} from '../ksql';
-import {
-  ChainIdScrapper,
-  ChainRpcScrapper,
-  IChainIdNamePair,
-  IChainRpcUrlPair,
-  INodeStorageRepository,
-  IProvider,
-  IProviderConfigurationMerger,
-  IScrapper,
-  NodeStorageRepository,
-  Provider,
-  ProviderConfigurationMerger,
-} from '../provider';
 import {IValidator, Validator} from '../validators';
 
 export class ContainerInstance extends Container {
   constructor() {
     super();
 
-    this.registerInstances();
+    this.registerServices();
   }
 
-  private registerInstances(): void {
+  private async registerServices() {
     this.bind<IConfigurationValidationSchema>(
       TYPES.IConfigurationValidationSchema
     )
@@ -44,56 +31,27 @@ export class ContainerInstance extends Container {
       .to(Configuration)
       .inSingletonScope();
 
-    this.bind<IScrapper<IChainIdNamePair>>(TYPES.IChainIdScrapper)
-      .to(ChainIdScrapper)
-      .inSingletonScope();
-
-    this.bind<IScrapper<IChainRpcUrlPair>>(TYPES.IChainRpcScrapper)
-      .to(ChainRpcScrapper)
-      .inSingletonScope();
-
-    this.bind<IProviderConfigurationMerger>(TYPES.IProviderConfigurationMerger)
-      .to(ProviderConfigurationMerger)
-      .inSingletonScope();
-
-    this.bind<INodeStorageRepository>(TYPES.INodeStorageRepository)
-      .to(NodeStorageRepository)
-      .inSingletonScope();
-
-    this.bind<IProvider>(TYPES.IProvider).to(Provider).inSingletonScope();
-
+    this.bind<IDbQueries>(TYPES.IDbQueries).to(DbQueries).inSingletonScope();
     this.bind<IValidator>(TYPES.IValidator).to(Validator).inSingletonScope();
 
-    this.bind<infrastructure.messaging.IKafkaClient>(TYPES.IKafkaClient)
-      .toDynamicValue((context: interfaces.Context) => {
-        const configuration = context.container.get<IConfiguration>(
-          TYPES.IConfiguration
-        );
-
-        return new infrastructure.messaging.KafkaClient(configuration.kafka);
-      })
-      .inSingletonScope();
+    const configuration = this.get<IConfiguration>(TYPES.IConfiguration);
 
     this.bind<infrastructure.logging.ILogger>(TYPES.ILogger)
-      .toDynamicValue((context: interfaces.Context) => {
-        const configuration = context.container.get<IConfiguration>(
-          TYPES.IConfiguration
-        );
+      .toDynamicValue(
+        () => new infrastructure.logging.Logger(configuration.logging)
+      )
+      .inSingletonScope();
 
-        return new infrastructure.logging.Logger(configuration.logging);
-      })
+    this.bind<infrastructure.messaging.IKafkaClient>(TYPES.IKafkaClient)
+      .toDynamicValue(
+        () => new infrastructure.messaging.KafkaClient(configuration.kafka)
+      )
       .inSingletonScope();
 
     this.bind<infrastructure.ksql.IKsqldb>(TYPES.IKsqlDb)
-      .toDynamicValue((context: interfaces.Context) => {
-        const configuration = context.container.get<IConfiguration>(
-          TYPES.IConfiguration
-        );
-
-        return new infrastructure.ksql.Ksqldb(configuration.ksql);
-      })
+      .toDynamicValue(() => new infrastructure.ksql.Ksqldb(configuration.ksql))
       .inSingletonScope();
 
-    this.bind<IDbQueries>(TYPES.IDbQueries).to(DbQueries).inSingletonScope();
+    const logger = this.get<infrastructure.logging.ILogger>(TYPES.ILogger);
   }
 }

@@ -1,27 +1,8 @@
-import {
-  ChainIdScrapper,
-  ChainRpcScrapper,
-  EvmApi,
-  IChainIdNamePair,
-  IChainRpcUrlPair,
-  IEvmApi,
-  IExtendedChainRpcUrlPair,
-  IExtendedRpcInstance,
-  INodeStorageRepository,
-  IProvider,
-  IProviderConfigurationMerger,
-  IRpcDetails,
-  IRpcInstance,
-  IScrapper,
-  ITransformedExtendedRpcInstance,
-  NodeStorageRepository,
-  Provider,
-  ProviderConfigurationMerger,
-} from './provider';
-
 export {
-  ChainIdScrapper,
-  ChainRpcScrapper,
+  BlockRetrieval,
+  DefaultChainIdScrapper,
+  DefaultChainRpcScrapper,
+  DefaultEvmApiFactory,
   EvmApi,
   IChainIdNamePair,
   IChainRpcUrlPair,
@@ -35,7 +16,9 @@ export {
   IRpcInstance,
   IScrapper,
   ITransformedExtendedRpcInstance,
-  NodeStorageRepository,
+  MemoryNodeStorageRepository,
   Provider,
   ProviderConfigurationMerger,
-};
+  ProviderConfigurator,
+  ProviderManagement,
+} from './provider';

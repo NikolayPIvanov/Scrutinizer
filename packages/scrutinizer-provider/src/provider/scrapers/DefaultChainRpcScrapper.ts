@@ -1,9 +1,6 @@
 /* eslint-disable node/no-extraneous-import */
 import axios, {AxiosInstance} from 'axios';
-import {inject, injectable} from 'inversify';
-import {to} from 'scrutinizer-infrastructure/build/src/common';
-import {ILogger} from 'scrutinizer-infrastructure/build/src/logging';
-import {TYPES} from '../../injection/types';
+import {ILoggerLike, to} from '../../common';
 import {
   DEFI_LLAMA_GITHUB_BASE_URL,
   FALLBACK_RPC_GITHUB_RPC_URL,
@@ -11,11 +8,10 @@ import {
 } from './scarper.constants';
 import {IChainRpcUrlPair, IScrapper} from './scraper.interfaces';
 
-@injectable()
-export class ChainRpcScrapper implements IScrapper<IChainRpcUrlPair> {
+export class DefaultChainRpcScrapper implements IScrapper<IChainRpcUrlPair> {
   private httpClient: AxiosInstance;
 
-  constructor(@inject(TYPES.ILogger) private logger: ILogger) {
+  constructor(private logger: ILoggerLike) {
     this.httpClient = axios.create({
       baseURL: DEFI_LLAMA_GITHUB_BASE_URL,
     });
