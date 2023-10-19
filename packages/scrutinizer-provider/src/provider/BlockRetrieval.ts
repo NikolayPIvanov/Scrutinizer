@@ -1,11 +1,11 @@
 import {ILoggerLike, requestMultiplePromisesWithTimeout} from '../common';
-import {getConsensusValue} from './consensus.utility';
 import {
   IBlockRetrieval,
   IEvmApi,
   IFullJsonRpcBlock,
   IProviderConfigurator,
 } from './provider.interfaces';
+import {getConsensusValue} from './utilities/consensus.utility';
 
 export class BlockRetrieval implements IBlockRetrieval {
   constructor(

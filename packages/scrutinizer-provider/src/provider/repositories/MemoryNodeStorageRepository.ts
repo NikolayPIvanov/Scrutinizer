@@ -1,4 +1,4 @@
-import {INodeStorageRepository, IRpcNode} from './provider.interfaces';
+import {INodeStorageRepository, IRpcNode} from '../provider.interfaces';
 
 export class MemoryNodeStorageRepository implements INodeStorageRepository {
   private nodes: Map<string, IRpcNode> = new Map();

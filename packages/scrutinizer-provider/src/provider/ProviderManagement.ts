@@ -1,5 +1,8 @@
+import EventEmitter = require('events');
 import {ILoggerLike, to} from '../common';
+import {ScrutinizerProviderEvents} from './ProviderManagementEvents';
 import {
+  IBlockLagCalculation,
   IBlockRetrieval,
   IProviderChainLagAndBlock,
   IProviderConfigurator,
@@ -9,7 +12,8 @@ import {ITransformedExtendedRpcInstance} from './scrapers';
 
 export class ProviderManagement implements IProviderManagement {
   private blockLag = 0;
-  private lastCommitted = 0;
+  private previousLatest = 0;
+  private emitter = new EventEmitter();
 
   constructor(
     private logger: ILoggerLike,
@@ -36,13 +40,18 @@ export class ProviderManagement implements IProviderManagement {
     });
   };
 
+  public onBlockLagCalculated(
+    action: (calculation: IBlockLagCalculation) => Promise<void>
+  ): void {
+    this.emitter.on(ScrutinizerProviderEvents.BlockLagCalculated, action);
+  }
+
   private async initializeTimers({
     lastCommitted,
     refreshProvidersInterval,
     blockLagThreshold,
     blockTime,
     checkBlockLagIntervalMultiplier,
-    customParametersCalculator,
   }: {
     lastCommitted: number;
     refreshProvidersInterval: number;
@@ -57,16 +66,14 @@ export class ProviderManagement implements IProviderManagement {
     this.initializePeriodicBlockLag(
       blockLagThreshold,
       blockTime,
-      checkBlockLagIntervalMultiplier,
-      customParametersCalculator
+      checkBlockLagIntervalMultiplier
     );
   }
 
   private initializePeriodicBlockLag = (
     blockLagThreshold: number,
     blockTime: number,
-    checkBlockLagIntervalMultiplier: number,
-    customParametersCalculator?: () => Promise<IProviderChainLagAndBlock>
+    checkBlockLagIntervalMultiplier: number
   ) => {
     let calculatingLag = false;
     setInterval(async () => {
@@ -76,7 +83,7 @@ export class ProviderManagement implements IProviderManagement {
         }
 
         calculatingLag = true;
-        await this.calculateBlockLagAndLatestBlock(customParametersCalculator);
+        await this.calculateBlockLagAndLatestBlock();
 
         if (this.blockLag > blockLagThreshold) {
           this.providerConfigurator.refreshProviders();
@@ -89,15 +96,10 @@ export class ProviderManagement implements IProviderManagement {
     }, blockTime * checkBlockLagIntervalMultiplier);
   };
 
-  private initializeBlockTimeCalculation = async (
-    lastCommitted: number,
-    customParametersCalculator?: () => Promise<IProviderChainLagAndBlock>
-  ) => {
-    this.lastCommitted = lastCommitted;
+  private initializeBlockTimeCalculation = async (lastCommitted: number) => {
+    this.previousLatest = lastCommitted;
 
-    const [, error] = await to(
-      this.calculateBlockLagAndLatestBlock(customParametersCalculator)
-    );
+    const [, error] = await to(this.calculateBlockLagAndLatestBlock());
     if (error) {
       this.logger.error('calculateBlockTime', error);
     }
@@ -117,35 +119,39 @@ export class ProviderManagement implements IProviderManagement {
    * A consensus value is calculated from the providers where the most common block number is returned.
    * Block lag is the difference between the latest block and the last committed block.
    */
-  private async calculateBlockLagAndLatestBlock(
-    customParametersCalculator?: () => Promise<IProviderChainLagAndBlock>
-  ) {
+  private async calculateBlockLagAndLatestBlock() {
     // Get the block number from the providers.
-    const blockNumber = await this.blockRetrieval.getBlockNumber();
-    if (!blockNumber) {
+    const latest = await this.blockRetrieval.getBlockNumber();
+    if (!latest) {
       return;
     }
 
     // Set the pivot so we can have a starting point for the block lag calculation.
-    const pivot = this.lastCommitted || blockNumber;
-    const lag = blockNumber - pivot;
+    const pivot = this.previousLatest || latest;
+    const lag = latest - pivot;
 
-    if (customParametersCalculator) {
-      const calculation = await customParametersCalculator();
-      this.blockLag = calculation.blockLag;
-      this.lastCommitted = calculation.lastCommitted;
+    this.emitter.emit(ScrutinizerProviderEvents.BlockLagCalculated, {
+      lag,
+      previousLatest: this.previousLatest,
+      latest,
+    });
 
-      return;
-    }
+    // if (customParametersCalculator) {
+    //   const calculation = await customParametersCalculator();
+    //   this.blockLag = calculation.blockLag;
+    //   this.lastCommitted = calculation.lastCommitted;
+
+    //   return;
+    // }
 
     this.blockLag = lag;
-    this.lastCommitted = blockNumber;
+    this.previousLatest = latest;
   }
 
   private async calc() {
     const blocksPerIteration = Math.min(lag, maxBlocksPerIteration);
     if (blocksPerIteration === 0) {
-      this.lastCommitted = blockNumber;
+      this.previousLatest = blockNumber;
       return;
     }
 

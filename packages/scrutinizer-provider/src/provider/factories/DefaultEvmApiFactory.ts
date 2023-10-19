@@ -1,10 +1,10 @@
-import {EvmApi} from './EvmApi';
+import {EvmApi} from '../EvmApi';
 import {
   IEvmApi,
   IEvmApiFactory,
   INodeStorageRepository,
   IRpcInstanceMetadata,
-} from './provider.interfaces';
+} from '../provider.interfaces';
 
 export class DefaultEvmApiFactory implements IEvmApiFactory {
   public async create(

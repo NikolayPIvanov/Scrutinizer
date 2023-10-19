@@ -20,6 +20,12 @@ export interface IProviderChainLagAndBlock {
   lastCommitted: number;
 }
 
+export interface IBlockLagCalculation {
+  lag: number;
+  latest: number;
+  previousLatest: number;
+}
+
 export interface IProviderManagement {
   initialize(
     providerRpcConfiguration: ITransformedExtendedRpcInstance,
@@ -29,6 +35,9 @@ export interface IProviderManagement {
     blockTime: number,
     checkBlockLagIntervalMultiplier: number
   ): Promise<void>;
+  onBlockLagCalculated(
+    action: (calculation: IBlockLagCalculation) => Promise<void>
+  ): void;
 }
 
 export interface IProviderConfigurator {
