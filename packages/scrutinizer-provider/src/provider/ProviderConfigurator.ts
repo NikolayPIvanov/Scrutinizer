@@ -1,7 +1,7 @@
 import {to} from '../common';
+import {IEvmApiFactory} from './factories';
 import {
   IEvmApi,
-  IEvmApiFactory,
   INodeStorageRepository,
   IProviderConfigurator,
 } from './provider.interfaces';

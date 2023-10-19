@@ -9,7 +9,7 @@ export {
 
 export {BlockRetrieval} from './BlockRetrieval';
 export {ProviderManagement} from './ProviderManagement';
-export {DefaultEvmApiFactory} from './factories';
+export {factory} from './factories';
 export {MemoryNodeStorageRepository} from './repositories/MemoryNodeStorageRepository';
 export {
   DefaultChainIdScrapper,

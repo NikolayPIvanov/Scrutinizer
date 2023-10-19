@@ -1,8 +1,8 @@
-import {ILoggerLike} from '../../common';
 import {BlockRetrieval} from '../BlockRetrieval';
 import {Provider} from '../Provider';
 import {ProviderConfigurator} from '../ProviderConfigurator';
 import {ProviderManagement} from '../ProviderManagement';
+import {IProvider} from '../provider.interfaces';
 import {MemoryNodeStorageRepository} from '../repositories';
 import {
   DefaultChainIdScrapper,
@@ -10,9 +10,14 @@ import {
   ProviderConfigurationMerger,
 } from '../scrapers';
 import {DefaultEvmApiFactory} from './DefaultEvmApiFactory';
+import {IProviderBootstrap, IProviderFactory} from './factories.interfaces';
 
-export class DefaultProviderFactory {
-  public create = async (logger: ILoggerLike, chainId: number) => {
+export class DefaultProviderFactory implements IProviderFactory {
+  public async create({
+    logger,
+    chainId,
+    providerInitializerConfiguration,
+  }: IProviderBootstrap) {
     const defaultChainIdScrapper = new DefaultChainIdScrapper(logger);
     const defaultChainRpcScrapper = new DefaultChainRpcScrapper(logger);
     const providerConfigurationMerger = new ProviderConfigurationMerger(
@@ -37,11 +42,14 @@ export class DefaultProviderFactory {
 
     const provider = new Provider(providerManagement);
 
-    const providerConfiguration =
+    const providerRpcConfiguration =
       await providerConfigurationMerger.mergeConfigurations(chainId);
 
-    await provider.initialize(providerConfiguration, 0);
+    await provider.initialize({
+      ...providerInitializerConfiguration,
+      providerRpcConfiguration,
+    });
 
-    return provider;
-  };
+    return provider as IProvider;
+  }
 }

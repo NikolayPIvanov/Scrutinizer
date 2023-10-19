@@ -8,7 +8,6 @@ import {
 
 import {TYPES} from './types';
 
-// eslint-disable-next-line node/no-extraneous-import
 import {infrastructure} from 'scrutinizer-infrastructure';
 import {DbQueries, IDbQueries} from '../ksql';
 import {IValidator, Validator} from '../validators';
@@ -51,7 +50,5 @@ export class ContainerInstance extends Container {
     this.bind<infrastructure.ksql.IKsqldb>(TYPES.IKsqlDb)
       .toDynamicValue(() => new infrastructure.ksql.Ksqldb(configuration.ksql))
       .inSingletonScope();
-
-    const logger = this.get<infrastructure.logging.ILogger>(TYPES.ILogger);
   }
 }

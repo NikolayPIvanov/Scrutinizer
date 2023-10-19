@@ -1,8 +1,10 @@
-// eslint-disable-next-line node/no-extraneous-import
 import {infrastructure} from 'scrutinizer-infrastructure';
+// eslint-disable-next-line node/no-extraneous-import
+import {factory} from 'scrutinizer-provider';
 
 import 'reflect-metadata';
 
+import {IConfiguration} from './configuration';
 import {ContainerInstance, TYPES} from './injection';
 import {IDbQueries} from './ksql';
 import {IValidator} from './validators';
@@ -22,27 +24,23 @@ async function bootstrapInfrastructure(container: ContainerInstance) {
   );
   const ksqldb = container.get<infrastructure.ksql.IKsqldb>(TYPES.IKsqlDb);
 
-  const nodeStorageRepository = container.get<INodeStorageRepository>(
-    TYPES.INodeStorageRepository
-  );
-
   await kafkaClient.bootstrap();
   await ksqldb.client.connect();
-  await nodeStorageRepository.init();
 }
 
 async function initializeProvider(container: ContainerInstance) {
-  const providerConfigurationMerger =
-    container.get<IProviderConfigurationMerger>(
-      TYPES.IProviderConfigurationMerger
-    );
+  const configuration = container.get<IConfiguration>(TYPES.IConfiguration);
+
   const dbQueries = container.get<IDbQueries>(TYPES.IDbQueries);
-
-  const configuration = await providerConfigurationMerger.mergeConfigurations();
-  const provider = container.get<IProvider>(TYPES.IProvider);
-
   const latestCommittedBlockNumber =
     await dbQueries.getLatestCommittedBlockNumber();
 
-  await provider.initialize(configuration, latestCommittedBlockNumber);
+  const provider = await factory.create({
+    logger: container.get<infrastructure.logging.ILogger>(TYPES.ILogger),
+    chainId: configuration.network.chainId,
+    providerInitializerConfiguration: {
+      ...configuration.network,
+      lastCommitted: latestCommittedBlockNumber,
+    },
+  });
 }

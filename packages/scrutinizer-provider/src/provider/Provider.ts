@@ -1,26 +1,16 @@
-import {injectable} from 'inversify';
+import {IProviderInitializerConfiguration} from './factories/factories.interfaces';
 import {IProvider, IProviderManagement} from './provider.interfaces';
-import {ITransformedExtendedRpcInstance} from './scrapers';
 
-@injectable()
 export class Provider implements IProvider {
   constructor(private providerManagement: IProviderManagement) {}
 
-  get manager() {
-    return this.providerManagement;
+  get api() {
+    return this.providerManagement.api;
   }
 
   public async initialize(
-    providerRpcConfiguration: ITransformedExtendedRpcInstance,
-    lastCommitted?: number
+    providerInitializerConfiguration: IProviderInitializerConfiguration
   ): Promise<void> {
-    await this.providerManagement.initialize(
-      providerRpcConfiguration,
-      1000,
-      lastCommitted,
-      60000,
-      30,
-      30
-    );
+    await this.providerManagement.initialize(providerInitializerConfiguration);
   }
 }

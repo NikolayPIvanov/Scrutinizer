@@ -2,13 +2,15 @@ import EventEmitter = require('events');
 import {ILoggerLike, to} from '../common';
 import {ScrutinizerProviderEvents} from './ProviderManagementEvents';
 import {
+  IProviderInitializerConfiguration,
+  IProviderManagementConfiguration,
+} from './factories/factories.interfaces';
+import {
   IBlockLagCalculation,
   IBlockRetrieval,
-  IProviderChainLagAndBlock,
   IProviderConfigurator,
   IProviderManagement,
 } from './provider.interfaces';
-import {ITransformedExtendedRpcInstance} from './scrapers';
 
 export class ProviderManagement implements IProviderManagement {
   private blockLag = 0;
@@ -21,14 +23,18 @@ export class ProviderManagement implements IProviderManagement {
     private blockRetrieval: IBlockRetrieval
   ) {}
 
-  public initialize = async (
-    providerRpcConfiguration: ITransformedExtendedRpcInstance,
-    blockTime: number,
-    lastCommitted = 0,
-    refreshProvidersInterval = 60000,
-    blockLagThreshold = 30,
-    checkBlockLagIntervalMultiplier = 30
-  ) => {
+  get api(): IBlockRetrieval {
+    return this.blockRetrieval;
+  }
+
+  public initialize = async ({
+    providerRpcConfiguration,
+    lastCommitted,
+    refreshProvidersInterval,
+    blockLagThreshold,
+    blockTime,
+    checkBlockLagIntervalMultiplier,
+  }: IProviderInitializerConfiguration) => {
     await this.providerConfigurator.prepareProviders(providerRpcConfiguration);
 
     this.initializeTimers({
@@ -52,14 +58,7 @@ export class ProviderManagement implements IProviderManagement {
     blockLagThreshold,
     blockTime,
     checkBlockLagIntervalMultiplier,
-  }: {
-    lastCommitted: number;
-    refreshProvidersInterval: number;
-    blockLagThreshold: number;
-    blockTime: number;
-    checkBlockLagIntervalMultiplier: number;
-    customParametersCalculator?: () => Promise<IProviderChainLagAndBlock>;
-  }) {
+  }: IProviderManagementConfiguration) {
     await this.initializeBlockTimeCalculation(lastCommitted);
 
     this.initializePeriodicProviderRefresh(refreshProvidersInterval);

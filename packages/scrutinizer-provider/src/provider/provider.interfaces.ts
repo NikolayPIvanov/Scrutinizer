@@ -1,3 +1,4 @@
+import {IProviderInitializerConfiguration} from './factories/factories.interfaces';
 import {ITransformedExtendedRpcInstance} from './scrapers/scraper.interfaces';
 
 export interface IBlockRetrieval {
@@ -7,20 +8,6 @@ export interface IBlockRetrieval {
     maxRequestTime: number,
     forceFastestProvider: boolean
   ): Promise<IFullJsonRpcBlock | null>;
-}
-
-export interface IEvmApiFactory {
-  create(
-    repository: INodeStorageRepository,
-    configuration: IRpcInstanceMetadata
-  ): Promise<IEvmApi>;
-}
-
-export interface IEvmApiFactory {
-  create(
-    repository: INodeStorageRepository,
-    configuration: IRpcInstanceMetadata
-  ): Promise<IEvmApi>;
 }
 
 export interface IProviderChainLagAndBlock {
@@ -35,14 +22,8 @@ export interface IBlockLagCalculation {
 }
 
 export interface IProviderManagement {
-  initialize(
-    providerRpcConfiguration: ITransformedExtendedRpcInstance,
-    blockTime: number,
-    lastCommitted?: number,
-    refreshProvidersInterval?: number,
-    blockLagThreshold?: number,
-    checkBlockLagIntervalMultiplier?: number
-  ): Promise<void>;
+  api: IBlockRetrieval;
+  initialize(configuration: IProviderInitializerConfiguration): Promise<void>;
   onBlockLagCalculated(
     action: (calculation: IBlockLagCalculation) => Promise<void>
   ): void;
@@ -107,9 +88,9 @@ export interface IEvmApi {
 }
 
 export interface IProvider {
+  api: IBlockRetrieval;
   initialize: (
-    providerRpcConfiguration: ITransformedExtendedRpcInstance,
-    lastCommitted?: number
+    providerInitializerConfiguration: IProviderInitializerConfiguration
   ) => Promise<void>;
 }
 

@@ -1,9 +1,4 @@
 export {
-  BlockRetrieval,
-  DefaultChainIdScrapper,
-  DefaultChainRpcScrapper,
-  DefaultEvmApiFactory,
-  EvmApi,
   IChainIdNamePair,
   IChainRpcUrlPair,
   IEvmApi,
@@ -16,9 +11,5 @@ export {
   IRpcInstance,
   IScrapper,
   ITransformedExtendedRpcInstance,
-  MemoryNodeStorageRepository,
-  Provider,
-  ProviderConfigurationMerger,
-  ProviderConfigurator,
-  ProviderManagement,
+  factory,
 } from './provider';
