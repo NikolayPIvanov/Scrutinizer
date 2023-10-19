@@ -1,12 +1,12 @@
 import {ITransformedExtendedRpcInstance} from './scrapers/scraper.interfaces';
 
 export interface IBlockRetrieval {
-  getFullBlock(
-    blockNumber: number,
-    maxRequestTime?: number,
-    forcedProvider?: IEvmApi
-  ): Promise<IFullJsonRpcBlock | null>;
   getBlockNumber(maxRequestTime?: number): Promise<number | null>;
+  getBlock(
+    blockNumber: number,
+    maxRequestTime: number,
+    forceFastestProvider: boolean
+  ): Promise<IFullJsonRpcBlock | null>;
 }
 
 export interface IEvmApiFactory {
@@ -29,11 +29,11 @@ export interface IBlockLagCalculation {
 export interface IProviderManagement {
   initialize(
     providerRpcConfiguration: ITransformedExtendedRpcInstance,
-    lastCommitted: number,
-    refreshProvidersInterval: number,
-    blockLagThreshold: number,
     blockTime: number,
-    checkBlockLagIntervalMultiplier: number
+    lastCommitted?: number,
+    refreshProvidersInterval?: number,
+    blockLagThreshold?: number,
+    checkBlockLagIntervalMultiplier?: number
   ): Promise<void>;
   onBlockLagCalculated(
     action: (calculation: IBlockLagCalculation) => Promise<void>
@@ -80,7 +80,7 @@ export interface IJsonRpcResponse<T> {
 }
 
 export interface INodeStorageRepository {
-  findStartNodes(chainId: number): Promise<IRpcNode[]>;
+  findStartNodes(chainId: number, latency?: number): Promise<IRpcNode[]>;
   findAll(): Promise<IRpcNode[]>;
   upsert(node: IRpcNode): void;
 }

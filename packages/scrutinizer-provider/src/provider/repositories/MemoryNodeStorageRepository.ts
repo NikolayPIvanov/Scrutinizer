@@ -3,13 +3,16 @@ import {INodeStorageRepository, IRpcNode} from '../provider.interfaces';
 export class MemoryNodeStorageRepository implements INodeStorageRepository {
   private nodes: Map<string, IRpcNode> = new Map();
 
-  public async findStartNodes(chainId: number): Promise<IRpcNode[]> {
+  public async findStartNodes(
+    chainId: number,
+    latency = 1000
+  ): Promise<IRpcNode[]> {
     const nodes = Array.from(this.nodes.values()).filter(
       node =>
         node.chainId === chainId &&
         node.errorCount === 0 &&
         node.rateLimit === 0 &&
-        node.latency <= 1000
+        node.latency <= latency
     );
 
     return nodes.sort((a, b) => a.latency - b.latency);

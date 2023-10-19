@@ -23,10 +23,10 @@ export class ProviderManagement implements IProviderManagement {
 
   public initialize = async (
     providerRpcConfiguration: ITransformedExtendedRpcInstance,
+    blockTime: number,
     lastCommitted = 0,
     refreshProvidersInterval = 60000,
     blockLagThreshold = 30,
-    blockTime: number,
     checkBlockLagIntervalMultiplier = 30
   ) => {
     await this.providerConfigurator.prepareProviders(providerRpcConfiguration);
@@ -135,32 +135,7 @@ export class ProviderManagement implements IProviderManagement {
       previousLatest: this.previousLatest,
       latest,
     });
-
-    // if (customParametersCalculator) {
-    //   const calculation = await customParametersCalculator();
-    //   this.blockLag = calculation.blockLag;
-    //   this.lastCommitted = calculation.lastCommitted;
-
-    //   return;
-    // }
-
     this.blockLag = lag;
     this.previousLatest = latest;
-  }
-
-  private async calc() {
-    const blocksPerIteration = Math.min(lag, maxBlocksPerIteration);
-    if (blocksPerIteration === 0) {
-      this.previousLatest = blockNumber;
-      return;
-    }
-
-    const blockNumbers = this.constructConsequentArray(
-      blocksPerIteration,
-      pivot
-    );
-
-    // First send the block numbers to Kafka.
-    await this.sendBlockNumbersToKafka(blockNumbers);
   }
 }

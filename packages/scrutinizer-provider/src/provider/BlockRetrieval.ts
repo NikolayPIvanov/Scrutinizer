@@ -5,7 +5,10 @@ import {
   IFullJsonRpcBlock,
   IProviderConfigurator,
 } from './provider.interfaces';
-import {getConsensusValue} from './utilities/consensus.utility';
+import {
+  getBlockConsensusValue,
+  getConsensusValue,
+} from './utilities/consensus.utility';
 
 export class BlockRetrieval implements IBlockRetrieval {
   constructor(
@@ -13,7 +16,41 @@ export class BlockRetrieval implements IBlockRetrieval {
     private providerConfiguration: IProviderConfigurator
   ) {}
 
-  public async getFullBlock(
+  public async getBlock(
+    blockNumber: number,
+    maxRequestTime = 1000,
+    forceFastestProvider = false
+  ): Promise<IFullJsonRpcBlock | null> {
+    const time = Date.now();
+
+    const block = await this.getFullBlock(
+      blockNumber,
+      maxRequestTime,
+      this.getFastestProvider(forceFastestProvider)
+    );
+
+    if (Date.now() - time > maxRequestTime) {
+      this.providerConfiguration.refreshProviders();
+    }
+
+    return block;
+  }
+
+  private getFastestProvider(
+    forceFastestProvider: boolean
+  ): IEvmApi | undefined {
+    if (!forceFastestProvider) {
+      return;
+    }
+
+    const fasterProvider = this.providerConfiguration.providers
+      .filter(e => e.errorCount === 0)
+      .sort((a, b) => a.latency - b.latency)?.[0];
+
+    return fasterProvider ?? undefined;
+  }
+
+  private async getFullBlock(
     blockNumber: number,
     maxRequestTime = 1000,
     forcedProvider?: IEvmApi
@@ -32,7 +69,7 @@ export class BlockRetrieval implements IBlockRetrieval {
         maxRequestTime
       );
 
-      const validated = success
+      const validBlocks = success
         .filter(
           e =>
             !!e?.blockNumber &&
@@ -42,26 +79,20 @@ export class BlockRetrieval implements IBlockRetrieval {
         )
         .sort((a, b) => b!.logs?.length - a!.logs?.length);
 
-      const bestBlock = validated.find(
-        block =>
-          !!block?.blockNumber &&
-          !!block?.blockTimestamp &&
-          block?.transactions?.length > 0 &&
-          block?.logs?.length > 0
+      if (!validBlocks.length) {
+        return null;
+      }
+
+      const consensusBlock = getBlockConsensusValue(
+        validBlocks as IFullJsonRpcBlock[]
       );
 
-      if (bestBlock?.blockNumber) {
-        return bestBlock;
-      }
-
-      if (validated[0]?.blockNumber) {
-        return validated[0];
-      }
+      return consensusBlock ?? validBlocks[0];
     } catch (error) {
       this.logger.error(error, 'getFullBlock');
-    }
 
-    return null;
+      return null;
+    }
   }
 
   public async getBlockNumber(maxRequestTime = 1000): Promise<number | null> {

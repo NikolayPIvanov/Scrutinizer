@@ -1,1 +1,1 @@
-export {getConsensusValue} from './consensus.utility';
+export {getBlockConsensusValue, getConsensusValue} from './consensus.utility';

@@ -1,8 +1,8 @@
-import {ChainIdScrapper} from './ChainIdScrapper';
-import {ChainRpcScrapper} from './ChainRpcScrapper';
-import {ProviderConfigurationMerger} from './ProviderConfigurationMerger';
+export {ChainIdScrapper} from './ChainIdScrapper';
+export {ChainRpcScrapper} from './ChainRpcScrapper';
+export {ProviderConfigurationMerger} from './ProviderConfigurationMerger';
 
-import {
+export {
   IChainIdNamePair,
   IChainRpcUrlPair,
   IExtendedChainRpcUrlPair,
@@ -13,18 +13,3 @@ import {
   IScrapper,
   ITransformedExtendedRpcInstance,
 } from './scraper.interfaces';
-
-export {
-  ChainIdScrapper,
-  ChainRpcScrapper,
-  IChainIdNamePair,
-  IChainRpcUrlPair,
-  IExtendedChainRpcUrlPair,
-  IExtendedRpcInstance,
-  IProviderConfigurationMerger,
-  IRpcDetails,
-  IRpcInstance,
-  IScrapper,
-  ITransformedExtendedRpcInstance,
-  ProviderConfigurationMerger,
-};
