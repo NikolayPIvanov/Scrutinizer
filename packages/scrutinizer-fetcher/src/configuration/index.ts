@@ -1,10 +1,3 @@
-import {Configuration} from './Configuration';
-import {ConfigurationValidationSchema} from './ConfigurationValidationSchema';
-import {
-  IConfiguration,
-  IConfigurationValidationSchema,
-} from './configuration.interfaces';
-
-export {IConfiguration, IConfigurationValidationSchema};
-
-export {Configuration, ConfigurationValidationSchema};
+export {Configuration} from './Configuration';
+export {ConfigurationValidationSchema} from './ConfigurationValidationSchema';
+export {IConfiguration, IConfigurationValidationSchema} from './interfaces';

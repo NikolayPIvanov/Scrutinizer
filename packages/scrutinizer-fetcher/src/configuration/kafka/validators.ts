@@ -21,3 +21,5 @@ export const kafkaValidationSchema = joi.object<IKafkaConfiguration>().keys({
   brokers: joi.array().required().min(1),
   topics: topicsSchema,
 });
+
+// Path: packages/scrutinizer-fetcher/src/configuration/kafka/validators.ts

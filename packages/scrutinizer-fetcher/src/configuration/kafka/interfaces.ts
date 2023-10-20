@@ -13,3 +13,5 @@ export interface ITopicsConfiguration {
   forked: ITopicConfiguration;
   confirmed: ITopicConfiguration;
 }
+
+// Path: packages/scrutinizer-fetcher/src/configuration/network/validators.ts

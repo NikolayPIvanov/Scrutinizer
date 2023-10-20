@@ -1,15 +1,12 @@
 import * as dotenv from 'dotenv';
 import {inject, injectable} from 'inversify';
 import {TYPES} from '../injection/types';
-import {
-  IConfiguration,
-  IConfigurationValidationSchema,
-  IKafkaConfiguration,
-  IKsqlConfiguration,
-  ILoggingConfiguration,
-  INetworkConfiguration,
-  IValidatorConfiguration,
-} from './configuration.interfaces';
+import {IConfiguration, IConfigurationValidationSchema} from './interfaces';
+import {IKafkaConfiguration} from './kafka';
+import {IKsqlConfiguration} from './ksql';
+import {ILoggingConfiguration} from './logging';
+import {INetworkConfiguration} from './network';
+import {IValidatorConfiguration} from './validator';
 
 dotenv.config();
 
