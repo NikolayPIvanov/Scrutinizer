@@ -35,7 +35,6 @@ export class DefaultProviderFactory implements IProviderFactory {
 
     const blockRetrieval = new BlockRetrieval(logger, providerConfigurator);
     const providerManagement = new ProviderManagement(
-      logger,
       providerConfigurator,
       blockRetrieval
     );

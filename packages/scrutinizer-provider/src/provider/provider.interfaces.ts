@@ -24,9 +24,6 @@ export interface IBlockLagCalculation {
 export interface IProviderManagement {
   api: IBlockRetrieval;
   initialize(configuration: IProviderInitializerConfiguration): Promise<void>;
-  onBlockLagCalculated(
-    action: (calculation: IBlockLagCalculation) => Promise<void>
-  ): void;
 }
 
 export interface IProviderConfigurator {

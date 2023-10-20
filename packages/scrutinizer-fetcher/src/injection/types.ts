@@ -12,4 +12,5 @@ export const TYPES = {
   IValidator: Symbol('IValidator'),
   IKsqlDb: Symbol('IKsqlDb'),
   IDbQueries: Symbol('IDbQueries'),
+  ILagCalculatorService: Symbol('ILagCalculatorService'),
 };

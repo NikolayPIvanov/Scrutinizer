@@ -25,11 +25,7 @@ export interface IProviderBootstrap {
 }
 
 export interface IProviderManagementConfiguration {
-  blockTime: number;
-  lastCommitted: number;
   refreshProvidersInterval: number;
-  blockLagThreshold: number;
-  checkBlockLagIntervalMultiplier: number;
 }
 
 export interface IProviderInitializerConfiguration

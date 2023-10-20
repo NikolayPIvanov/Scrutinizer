@@ -1,3 +1,4 @@
+/* eslint-disable node/no-extraneous-import */
 import {Container} from 'inversify';
 import {
   Configuration,
@@ -10,7 +11,12 @@ import {TYPES} from './types';
 
 import {infrastructure} from 'scrutinizer-infrastructure';
 import {DbQueries, IDbQueries} from '../ksql';
-import {IValidator, Validator} from '../validators';
+import {
+  IValidatorService,
+  LagCalculatorService,
+  ValidatorService,
+} from '../services';
+import {ILagCalculatorService} from '../services/services.interfaces';
 
 export class ContainerInstance extends Container {
   constructor() {
@@ -31,7 +37,9 @@ export class ContainerInstance extends Container {
       .inSingletonScope();
 
     this.bind<IDbQueries>(TYPES.IDbQueries).to(DbQueries).inSingletonScope();
-    this.bind<IValidator>(TYPES.IValidator).to(Validator).inSingletonScope();
+    this.bind<IValidatorService>(TYPES.IValidator)
+      .to(ValidatorService)
+      .inSingletonScope();
 
     const configuration = this.get<IConfiguration>(TYPES.IConfiguration);
 
@@ -49,6 +57,10 @@ export class ContainerInstance extends Container {
 
     this.bind<infrastructure.ksql.IKsqldb>(TYPES.IKsqlDb)
       .toDynamicValue(() => new infrastructure.ksql.Ksqldb(configuration.ksql))
+      .inSingletonScope();
+
+    this.bind<ILagCalculatorService>(TYPES.ILagCalculatorService)
+      .to(LagCalculatorService)
       .inSingletonScope();
   }
 }

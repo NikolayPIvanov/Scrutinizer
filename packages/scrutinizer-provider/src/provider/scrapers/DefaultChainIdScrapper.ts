@@ -30,6 +30,7 @@ export class DefaultChainIdScrapper implements IScrapper<IChainIdNamePair> {
   };
 
   private scrapeChainIdsFromUrl = async (url: string) => {
+    this.logger.info(this.httpClient.defaults.baseURL);
     const [response, error] = await to(
       this.httpClient.get<IChainIdNamePair>(url)
     );

@@ -6,10 +6,10 @@ import {to} from 'scrutinizer-infrastructure/build/src/common';
 import {IConfiguration} from '../configuration';
 import {TYPES} from '../injection/types';
 import {IBlockTrace, IDbQueries} from '../ksql/ksql.interfaces';
-import {IBlockRoot, IValidator} from './validator.interfaces';
+import {IBlockRoot, IValidatorService} from './services.interfaces';
 
 @injectable()
-export class Validator implements IValidator {
+export class ValidatorService implements IValidatorService {
   private lastConfirmedBlockNumber?: number;
 
   constructor(

@@ -1,21 +1,33 @@
 import {infrastructure} from 'scrutinizer-infrastructure';
-// eslint-disable-next-line node/no-extraneous-import
-import {factory} from 'scrutinizer-provider';
 
 import 'reflect-metadata';
 
+import {ILogger} from 'scrutinizer-infrastructure/build/src/logging';
+import {factory} from 'scrutinizer-provider';
 import {IConfiguration} from './configuration';
 import {ContainerInstance, TYPES} from './injection';
-import {IDbQueries} from './ksql';
-import {IValidator} from './validators';
+import {ILagCalculatorService, IValidatorService} from './services';
 
 (async () => {
   const container = new ContainerInstance();
 
   await bootstrapInfrastructure(container);
-  await initializeProvider(container);
 
-  container.get<IValidator>(TYPES.IValidator);
+  const logger = container.get<ILogger>(TYPES.ILogger);
+  const configuration = container.get<IConfiguration>(TYPES.IConfiguration);
+  const lagCalculatorService = container.get<ILagCalculatorService>(
+    TYPES.ILagCalculatorService
+  );
+
+  const provider = await factory.create({
+    logger,
+    chainId: configuration.network.chainId,
+    providerInitializerConfiguration: configuration.network,
+  });
+
+  await lagCalculatorService.initializePeriodicBlockLag(provider);
+
+  container.get<IValidatorService>(TYPES.IValidator);
 })();
 
 async function bootstrapInfrastructure(container: ContainerInstance) {
@@ -24,23 +36,5 @@ async function bootstrapInfrastructure(container: ContainerInstance) {
   );
   const ksqldb = container.get<infrastructure.ksql.IKsqldb>(TYPES.IKsqlDb);
 
-  await kafkaClient.bootstrap();
-  await ksqldb.client.connect();
-}
-
-async function initializeProvider(container: ContainerInstance) {
-  const configuration = container.get<IConfiguration>(TYPES.IConfiguration);
-
-  const dbQueries = container.get<IDbQueries>(TYPES.IDbQueries);
-  const latestCommittedBlockNumber =
-    await dbQueries.getLatestCommittedBlockNumber();
-
-  const provider = await factory.create({
-    logger: container.get<infrastructure.logging.ILogger>(TYPES.ILogger),
-    chainId: configuration.network.chainId,
-    providerInitializerConfiguration: {
-      ...configuration.network,
-      lastCommitted: latestCommittedBlockNumber,
-    },
-  });
+  await Promise.all([kafkaClient.bootstrap(), ksqldb.client.connect()]);
 }
