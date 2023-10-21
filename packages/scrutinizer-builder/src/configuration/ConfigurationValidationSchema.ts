@@ -1,4 +1,3 @@
-/* eslint-disable node/no-extraneous-import */
 import {injectable} from 'inversify';
 import {IConfiguration, IConfigurationValidationSchema} from './interfaces';
 import {kafkaValidationSchema} from './kafka';

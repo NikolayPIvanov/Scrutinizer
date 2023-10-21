@@ -1,8 +1,9 @@
+/* eslint-disable node/no-extraneous-import */
 import {CompressionTypes} from 'kafkajs';
 import {IKafkaClient} from 'scrutinizer-infrastructure/build/src/messaging';
 import {IExtendedKafkaMessage} from 'scrutinizer-infrastructure/build/src/messaging/kafka/consumers/consumers.interface';
+import {IProvider} from 'scrutinizer-provider';
 import {IConfiguration} from '../configuration';
-import {IProvider} from '../provider';
 
 export const validate = (message: IExtendedKafkaMessage) => {
   const raw = message.value?.toString();
@@ -36,7 +37,11 @@ export const getBlockAndBroadcast = async ({
   const lag = +message.highWaterOffset - +message.offset;
   const forceFastestProvider = lag > 10;
 
-  const block = await provider.getBlock(blockNumber, forceFastestProvider);
+  const block = await provider.api.getBlock(
+    blockNumber,
+    2000, // TODO
+    forceFastestProvider
+  );
 
   if (!block) {
     throw new Error(`Block ${blockNumber} not found`);

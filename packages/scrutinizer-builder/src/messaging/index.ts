@@ -1,4 +1,2 @@
-import {NextBlockConsumer} from './NextBlockConsumer';
-import {RetryBlockConsumer} from './RetryBlockConsumer';
-
-export {NextBlockConsumer, RetryBlockConsumer};
+export {NextBlockConsumer} from './NextBlockConsumer';
+export {RetryBlockConsumer} from './RetryBlockConsumer';

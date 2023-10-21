@@ -1,4 +1,4 @@
-import {Container, interfaces} from 'inversify';
+import {Container} from 'inversify';
 import {
   Configuration,
   ConfigurationValidationSchema,
@@ -6,24 +6,10 @@ import {
   IConfigurationValidationSchema,
 } from '../configuration';
 
-import {
-  ChainIdScrapper,
-  ChainRpcScrapper,
-  IChainIdNamePair,
-  IChainRpcUrlPair,
-  INodeStorageRepository,
-  IProvider,
-  IProviderConfigurationMerger,
-  IScrapper,
-  NodeStorageRepository,
-  Provider,
-  ProviderConfigurationMerger,
-} from '../provider';
-
-// eslint-disable-next-line node/no-extraneous-import
 import {infrastructure} from 'scrutinizer-infrastructure';
+import {types} from '../@types';
 import {NextBlockConsumer, RetryBlockConsumer} from '../messaging';
-import {types} from './types';
+import {IProviderAdapter, ProviderAdapter} from '../provider';
 
 export class ContainerInstance extends Container {
   constructor() {
@@ -43,51 +29,6 @@ export class ContainerInstance extends Container {
       .to(Configuration)
       .inSingletonScope();
 
-    this.bind<IScrapper<IChainIdNamePair>>(types.IChainIdScrapper)
-      .to(ChainIdScrapper)
-      .inSingletonScope();
-
-    this.bind<IScrapper<IChainRpcUrlPair>>(types.IChainRpcScrapper)
-      .to(ChainRpcScrapper)
-      .inSingletonScope();
-
-    this.bind<IProviderConfigurationMerger>(types.IProviderConfigurationMerger)
-      .to(ProviderConfigurationMerger)
-      .inSingletonScope();
-
-    this.bind<INodeStorageRepository>(types.INodeStorageRepository)
-      .to(NodeStorageRepository)
-      .inSingletonScope();
-
-    this.bind<IProvider>(types.IProvider).to(Provider).inSingletonScope();
-
-    this.bind<infrastructure.messaging.IKafkaClient>(types.IKafkaClient)
-      .toDynamicValue((context: interfaces.Context) => {
-        const configuration = context.container.get<IConfiguration>(
-          types.IConfiguration
-        );
-
-        return new infrastructure.messaging.KafkaClient({
-          ...configuration.kafka,
-          logLevel: 1, // error
-        });
-      })
-      .inSingletonScope();
-
-    this.bind<infrastructure.logging.ILogger>(types.ILogger)
-      .toDynamicValue((context: interfaces.Context) => {
-        const configuration = context.container.get<IConfiguration>(
-          types.IConfiguration
-        );
-
-        return new infrastructure.logging.Logger(configuration.logging);
-      })
-      .inSingletonScope();
-
-    this.bind<infrastructure.messaging.ICommitManager>(types.ICommitManager)
-      .toDynamicValue(() => new infrastructure.messaging.CommitManager())
-      .inSingletonScope();
-
     this.bind<infrastructure.messaging.IConsumerInstance>(
       types.IConsumerInstance
     )
@@ -100,6 +41,32 @@ export class ContainerInstance extends Container {
       .to(RetryBlockConsumer)
       .inSingletonScope();
 
+    this.bind<IProviderAdapter>(types.IProvider)
+      .to(ProviderAdapter)
+      .inSingletonScope();
+
+    this.configureDynamicValueServiceRegistrations();
+
     this.getAll(types.IConsumerInstance);
+  }
+
+  private configureDynamicValueServiceRegistrations() {
+    const configuration = this.get<IConfiguration>(types.IConfiguration);
+
+    this.bind<infrastructure.logging.ILogger>(types.ILogger)
+      .toDynamicValue(
+        () => new infrastructure.logging.Logger(configuration.logging)
+      )
+      .inSingletonScope();
+
+    this.bind<infrastructure.messaging.IKafkaClient>(types.IKafkaClient)
+      .toDynamicValue(
+        () => new infrastructure.messaging.KafkaClient(configuration.kafka)
+      )
+      .inSingletonScope();
+
+    this.bind<infrastructure.messaging.ICommitManager>(types.ICommitManager)
+      .toDynamicValue(() => new infrastructure.messaging.CommitManager())
+      .inSingletonScope();
   }
 }

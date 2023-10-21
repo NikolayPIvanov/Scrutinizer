@@ -1,4 +1,3 @@
-/* eslint-disable node/no-extraneous-import */
 import * as dotenv from 'dotenv';
 import {inject, injectable} from 'inversify';
 import {types} from '../@types';
