@@ -1,7 +1,7 @@
 /* eslint-disable node/no-extraneous-import */
 import * as dotenv from 'dotenv';
 import {inject, injectable} from 'inversify';
-import {TYPES} from '../injection/types';
+import {types} from '../@types';
 import {
   IConfiguration,
   IConfigurationValidationSchema,
@@ -21,7 +21,7 @@ export class Configuration implements IConfiguration {
   network: INetworkConfiguration;
 
   constructor(
-    @inject(TYPES.IConfigurationValidationSchema)
+    @inject(types.IConfigurationValidationSchema)
     private configurationValidationSchema: IConfigurationValidationSchema
   ) {
     const configuration = this.getConfiguration();

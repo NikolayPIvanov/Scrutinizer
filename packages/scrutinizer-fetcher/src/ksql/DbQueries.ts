@@ -52,13 +52,6 @@ export class DbQueries implements IDbQueries {
       throw error;
     }
 
-    const {rows} = data;
-
-    return (
-      rows?.map((row: unknown) => {
-        const block = row as IRawBlock;
-        return block;
-      }) || []
-    );
+    return data.rows?.map((row: unknown) => row as IRawBlock) || [];
   }
 }

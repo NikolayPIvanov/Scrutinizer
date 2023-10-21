@@ -1,42 +1,8 @@
-/* eslint-disable node/no-extraneous-import */
+import {IKafkaConfiguration} from './kafka';
+import {ILoggingConfiguration} from './logging';
+import {INetworkConfiguration} from './network';
 
-export interface IKafkaConfiguration {
-  clientId: string | undefined;
-  brokers: string[];
-  topics: ITopicsConfiguration;
-  groups: IGroupConfiguration;
-}
-
-export interface IGroupConfiguration {
-  blocks: string;
-  blocksRetry: string;
-}
-
-export interface ITopicConfiguration {
-  name: string;
-  maxBytesPerPartition?: number;
-}
-
-export interface ITopicsConfiguration {
-  blocks: ITopicConfiguration;
-  blocksRetry: ITopicConfiguration;
-  blocksDlq: ITopicConfiguration;
-  blocksFull: ITopicConfiguration;
-}
-
-export interface ILoggingConfiguration {
-  level: string;
-}
-
-export interface INetworkConfiguration {
-  chainId: number;
-  checkBlockLagIntervalMultiplier: number;
-  blockLagThreshold: number;
-  blockTime: number;
-  maxProviderCount: number;
-  maxRequestTime: number;
-  refreshProvidersInterval: number;
-}
+export {IKafkaConfiguration, ILoggingConfiguration, INetworkConfiguration};
 
 export interface IConfiguration {
   logging: ILoggingConfiguration;
