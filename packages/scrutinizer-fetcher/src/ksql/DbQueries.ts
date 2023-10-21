@@ -41,12 +41,13 @@ export class DbQueries implements IDbQueries {
    * @param after - The block number to start from. If not provided, all blocks are returned.
    * @returns The blocks after the provided block number or all blocks if no block number is provided.
    */
-  public async getBlocks(after?: number): Promise<IRawBlock[]> {
+  public async getBlocks(after?: number, limit = 10000): Promise<IRawBlock[]> {
     const query = after
-      ? 'SELECT * FROM blocks_traces WHERE `blockNumber` > ' + after + ';'
-      : 'SELECT * FROM blocks_traces;';
+      ? 'SELECT * FROM blocks_traces WHERE `blockNumber` > ' + after
+      : 'SELECT * FROM blocks_traces';
+    const limitQuery = `${query} LIMIT ${limit};`;
 
-    const {data, error} = await this.ksql.client.query(query);
+    const {data, error} = await this.ksql.client.query(limitQuery);
     if (!data) {
       throw error;
     }

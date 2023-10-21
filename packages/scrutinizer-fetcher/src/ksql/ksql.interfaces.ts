@@ -1,6 +1,6 @@
 export interface IDbQueries {
   getLatestCommittedBlockNumber(): Promise<number>;
-  getBlocks(after?: number): Promise<IRawBlock[]>;
+  getBlocks(after?: number, limit?: number): Promise<IRawBlock[]>;
 }
 
 export interface IRawBlock {

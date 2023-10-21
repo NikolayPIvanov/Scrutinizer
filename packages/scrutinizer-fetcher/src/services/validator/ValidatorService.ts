@@ -25,6 +25,11 @@ export class ValidatorService implements IValidatorService {
     );
   }
 
+  /**
+   * Validates the chain integrity by checking for forks and confirmed blocks.
+   * Forks are sent to the forked topic and confirmed blocks are sent to the confirmed topic.
+   * @returns A promise that resolves when the chain integrity has been validated.
+   */
   public async validateChainIntegrity(): Promise<void> {
     const [blocks, error] = await to(
       this.dbQueries.getBlocks(this.previouslyConfirmedBlockNumber)
