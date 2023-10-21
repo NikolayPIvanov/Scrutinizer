@@ -1,4 +1,3 @@
-/* eslint-disable node/no-extraneous-import */
 import {Container} from 'inversify';
 import {
   Configuration,
@@ -7,16 +6,15 @@ import {
   IConfigurationValidationSchema,
 } from '../configuration';
 
-import {TYPES} from './types';
-
 import {infrastructure} from 'scrutinizer-infrastructure';
+import {types} from '../@types';
 import {DbQueries, IDbQueries} from '../ksql';
 import {
+  ILagCalculatorService,
   IValidatorService,
   LagCalculatorService,
   ValidatorService,
 } from '../services';
-import {ILagCalculatorService} from '../services/services.interfaces';
 
 export class ContainerInstance extends Container {
   constructor() {
@@ -27,40 +25,45 @@ export class ContainerInstance extends Container {
 
   private async registerServices() {
     this.bind<IConfigurationValidationSchema>(
-      TYPES.IConfigurationValidationSchema
+      types.IConfigurationValidationSchema
     )
       .to(ConfigurationValidationSchema)
       .inSingletonScope();
 
-    this.bind<IConfiguration>(TYPES.IConfiguration)
+    this.bind<IConfiguration>(types.IConfiguration)
       .to(Configuration)
       .inSingletonScope();
 
-    this.bind<IDbQueries>(TYPES.IDbQueries).to(DbQueries).inSingletonScope();
-    this.bind<IValidatorService>(TYPES.IValidator)
+    this.bind<IDbQueries>(types.IDbQueries).to(DbQueries).inSingletonScope();
+
+    this.bind<IValidatorService>(types.IValidator)
       .to(ValidatorService)
       .inSingletonScope();
 
-    const configuration = this.get<IConfiguration>(TYPES.IConfiguration);
+    this.bind<ILagCalculatorService>(types.ILagCalculatorService)
+      .to(LagCalculatorService)
+      .inSingletonScope();
 
-    this.bind<infrastructure.logging.ILogger>(TYPES.ILogger)
+    this.configureDynamicValueServiceRegistrations();
+  }
+
+  private configureDynamicValueServiceRegistrations() {
+    const configuration = this.get<IConfiguration>(types.IConfiguration);
+
+    this.bind<infrastructure.logging.ILogger>(types.ILogger)
       .toDynamicValue(
         () => new infrastructure.logging.Logger(configuration.logging)
       )
       .inSingletonScope();
 
-    this.bind<infrastructure.messaging.IKafkaClient>(TYPES.IKafkaClient)
+    this.bind<infrastructure.messaging.IKafkaClient>(types.IKafkaClient)
       .toDynamicValue(
         () => new infrastructure.messaging.KafkaClient(configuration.kafka)
       )
       .inSingletonScope();
 
-    this.bind<infrastructure.ksql.IKsqldb>(TYPES.IKsqlDb)
+    this.bind<infrastructure.ksql.IKsqldb>(types.IKsqlDb)
       .toDynamicValue(() => new infrastructure.ksql.Ksqldb(configuration.ksql))
-      .inSingletonScope();
-
-    this.bind<ILagCalculatorService>(TYPES.ILagCalculatorService)
-      .to(LagCalculatorService)
       .inSingletonScope();
   }
 }

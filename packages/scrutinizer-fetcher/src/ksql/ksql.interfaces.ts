@@ -1,12 +1,6 @@
 export interface IDbQueries {
   getLatestCommittedBlockNumber(): Promise<number>;
-  getBlocks(after?: number): Promise<IBlockTrace[]>;
-}
-
-export interface IBlockTrace {
-  number: number;
-  hash: string;
-  parentHash: string;
+  getBlocks(after?: number): Promise<IRawBlock[]>;
 }
 
 export interface IRawBlock {
@@ -15,6 +9,6 @@ export interface IRawBlock {
   parentHash: string;
 }
 
-export interface ILastCommittedRow {
+export interface ILastCommittedBlockNumber {
   blockNumber: number;
 }

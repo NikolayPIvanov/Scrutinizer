@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 import {inject, injectable} from 'inversify';
-import {TYPES} from '../injection/types';
+import {types} from '../@types';
 import {IConfiguration, IConfigurationValidationSchema} from './interfaces';
 import {IKafkaConfiguration} from './kafka';
 import {IKsqlConfiguration} from './ksql';
@@ -19,7 +19,7 @@ export class Configuration implements IConfiguration {
   validator: IValidatorConfiguration;
 
   constructor(
-    @inject(TYPES.IConfigurationValidationSchema)
+    @inject(types.IConfigurationValidationSchema)
     private configurationValidationSchema: IConfigurationValidationSchema
   ) {
     const configuration = this.getConfiguration();

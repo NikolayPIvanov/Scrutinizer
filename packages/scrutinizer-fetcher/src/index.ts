@@ -1,11 +1,13 @@
+/* eslint-disable node/no-extraneous-import */
 import {infrastructure} from 'scrutinizer-infrastructure';
 
 import 'reflect-metadata';
 
 import {ILogger} from 'scrutinizer-infrastructure/build/src/logging';
 import {factory} from 'scrutinizer-provider';
+import {types} from './@types';
 import {IConfiguration} from './configuration';
-import {ContainerInstance, TYPES} from './injection';
+import {ContainerInstance} from './injection';
 import {ILagCalculatorService, IValidatorService} from './services';
 
 (async () => {
@@ -13,10 +15,10 @@ import {ILagCalculatorService, IValidatorService} from './services';
 
   await bootstrapInfrastructure(container);
 
-  const logger = container.get<ILogger>(TYPES.ILogger);
-  const configuration = container.get<IConfiguration>(TYPES.IConfiguration);
+  const logger = container.get<ILogger>(types.ILogger);
+  const configuration = container.get<IConfiguration>(types.IConfiguration);
   const lagCalculatorService = container.get<ILagCalculatorService>(
-    TYPES.ILagCalculatorService
+    types.ILagCalculatorService
   );
 
   const provider = await factory.create({
@@ -25,16 +27,16 @@ import {ILagCalculatorService, IValidatorService} from './services';
     providerInitializerConfiguration: configuration.network,
   });
 
-  await lagCalculatorService.initializePeriodicBlockLag(provider);
+  await lagCalculatorService.initializePeriodicBlockLagCalculation(provider);
 
-  container.get<IValidatorService>(TYPES.IValidator);
+  container.get<IValidatorService>(types.IValidator);
 })();
 
 async function bootstrapInfrastructure(container: ContainerInstance) {
   const kafkaClient = container.get<infrastructure.messaging.IKafkaClient>(
-    TYPES.IKafkaClient
+    types.IKafkaClient
   );
-  const ksqldb = container.get<infrastructure.ksql.IKsqldb>(TYPES.IKsqlDb);
+  const ksqldb = container.get<infrastructure.ksql.IKsqldb>(types.IKsqlDb);
 
   await Promise.all([kafkaClient.bootstrap(), ksqldb.client.connect()]);
 }

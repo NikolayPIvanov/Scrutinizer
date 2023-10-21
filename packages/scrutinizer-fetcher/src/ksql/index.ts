@@ -1,4 +1,2 @@
-import {IBlockTrace, IDbQueries, ILastCommittedRow} from './ksql.interfaces';
-import {DbQueries} from './Queries';
-
-export {DbQueries, IBlockTrace, IDbQueries, ILastCommittedRow};
+export {DbQueries} from './DbQueries';
+export {IDbQueries, IRawBlock} from './ksql.interfaces';

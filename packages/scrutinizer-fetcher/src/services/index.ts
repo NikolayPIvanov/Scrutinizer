@@ -1,7 +1,2 @@
-export {LagCalculatorService} from './LagCalculatorService';
-export {ValidatorService} from './ValidatorService';
-export {
-  IBlockRoot,
-  ILagCalculatorService,
-  IValidatorService,
-} from './services.interfaces';
+export {ILagCalculatorService, LagCalculatorService} from './lagCalculator';
+export {IValidatorService, ValidatorService} from './validator';

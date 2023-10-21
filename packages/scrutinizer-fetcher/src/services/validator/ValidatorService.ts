@@ -3,21 +3,21 @@ import {inject, injectable} from 'inversify';
 import {CompressionTypes} from 'kafkajs';
 import {infrastructure} from 'scrutinizer-infrastructure';
 import {to} from 'scrutinizer-infrastructure/build/src/common';
-import {IConfiguration} from '../configuration';
-import {TYPES} from '../injection/types';
-import {IBlockTrace, IDbQueries} from '../ksql/ksql.interfaces';
-import {IBlockRoot, IValidatorService} from './services.interfaces';
+import {types} from '../../@types';
+import {IConfiguration} from '../../configuration';
+import {IDbQueries, IRawBlock} from '../../ksql';
+import {IValidatorService} from './validator.interfaces';
 
 @injectable()
 export class ValidatorService implements IValidatorService {
-  private lastConfirmedBlockNumber?: number;
+  private previouslyConfirmedBlockNumber?: number;
 
   constructor(
-    @inject(TYPES.ILogger) private logger: infrastructure.logging.ILogger,
-    @inject(TYPES.IKafkaClient)
-    private kafkaClient: infrastructure.messaging.IKafkaClient,
-    @inject(TYPES.IConfiguration) private configuration: IConfiguration,
-    @inject(TYPES.IDbQueries) private dbQueries: IDbQueries
+    @inject(types.ILogger) private logger: infrastructure.logging.ILogger,
+    @inject(types.IKafkaClient)
+    private kafka: infrastructure.messaging.IKafkaClient,
+    @inject(types.IConfiguration) private configuration: IConfiguration,
+    @inject(types.IDbQueries) private dbQueries: IDbQueries
   ) {
     setInterval(
       async () => this.validateChainIntegrity(),
@@ -27,13 +27,13 @@ export class ValidatorService implements IValidatorService {
 
   public async validateChainIntegrity(): Promise<void> {
     const [blocks, error] = await to(
-      this.dbQueries.getBlocks(this.lastConfirmedBlockNumber)
+      this.dbQueries.getBlocks(this.previouslyConfirmedBlockNumber)
     );
     if (blocks?.length === 0 || error) {
       return;
     }
 
-    blocks?.sort((a, b) => a.number - b.number);
+    blocks?.sort((a, b) => a.blockNumber - b.blockNumber);
 
     const {forks, consecutiveBlocksAtStart} = this.findForks(blocks!);
     const confirmed = !forks.length
@@ -43,24 +43,30 @@ export class ValidatorService implements IValidatorService {
     await this.sendBlockNumbersToKafka(forks, confirmed);
 
     if (confirmed.length > 0) {
-      this.lastConfirmedBlockNumber = confirmed[confirmed.length - 1];
+      this.previouslyConfirmedBlockNumber = confirmed[confirmed.length - 1];
     }
   }
 
-  private findForks(blocks: IBlockTrace[]) {
+  /**
+   * Finds forks in an array of raw blocks and counts consecutive blocks at the start.
+   * @param blocks - An array of raw blocks to search for forks.
+   * @returns An object containing an array of fork block numbers and the number of consecutive blocks at the start.
+   */
+  private findForks(blocks: IRawBlock[]) {
     const forks = [];
     let consecutiveBlocksAtStart = 0;
-    // Find forks. Count consecutive blocks at start.
+
     for (let i = blocks.length - 1; i > 0; i--) {
       const currentBlock = blocks[i];
       const previousBlock = blocks[i - 1];
-      const consecutive = currentBlock.number - 1 === previousBlock.number;
+      const consecutive =
+        currentBlock.blockNumber - 1 === previousBlock.blockNumber;
       const chainUnlinked = currentBlock.parentHash !== previousBlock.hash;
       consecutiveBlocksAtStart =
         consecutive && !chainUnlinked ? consecutiveBlocksAtStart + 1 : 0;
 
       if (consecutive && chainUnlinked) {
-        forks.push(previousBlock.number);
+        forks.push(previousBlock.blockNumber);
       }
     }
 
@@ -73,7 +79,7 @@ export class ValidatorService implements IValidatorService {
 
   private findConfirmed(
     consecutiveBlocksAtStart: number,
-    blocks: IBlockRoot[]
+    blocks: IRawBlock[]
   ): number[] {
     if (
       consecutiveBlocksAtStart < this.configuration.validator.blocksThreshold
@@ -81,14 +87,10 @@ export class ValidatorService implements IValidatorService {
       return [];
     }
 
-    const confirmed = blocks
-      .slice(
-        0,
-        consecutiveBlocksAtStart - this.configuration.validator.blocksThreshold
-      )
-      .map(block => block.number);
+    const take =
+      consecutiveBlocksAtStart - this.configuration.validator.blocksThreshold;
 
-    return confirmed;
+    return blocks.slice(0, take).map(block => block.blockNumber);
   }
 
   private sendBlockNumbersToKafka = async (
@@ -96,7 +98,7 @@ export class ValidatorService implements IValidatorService {
     confirmed: number[] = []
   ) => {
     try {
-      await this.kafkaClient.producer.sendBatch({
+      await this.kafka.producer.sendBatch({
         compression: CompressionTypes.GZIP,
         topicMessages: [
           {

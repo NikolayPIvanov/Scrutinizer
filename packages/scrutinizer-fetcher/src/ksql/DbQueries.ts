@@ -1,18 +1,17 @@
 import {inject, injectable} from 'inversify';
 // eslint-disable-next-line node/no-extraneous-import
 import {infrastructure} from 'scrutinizer-infrastructure';
-import {TYPES} from '../injection/types';
+import {types} from '../@types';
 import {
-  IBlockTrace,
   IDbQueries,
-  ILastCommittedRow,
+  ILastCommittedBlockNumber,
   IRawBlock,
 } from './ksql.interfaces';
 
 @injectable()
 export class DbQueries implements IDbQueries {
   constructor(
-    @inject(TYPES.IKsqlDb) private ksql: infrastructure.ksql.IKsqldb
+    @inject(types.IKsqlDb) private ksql: infrastructure.ksql.IKsqldb
   ) {}
 
   /**
@@ -34,7 +33,7 @@ export class DbQueries implements IDbQueries {
       return 0;
     }
 
-    return (rows[0] as ILastCommittedRow).blockNumber;
+    return (rows[0] as ILastCommittedBlockNumber).blockNumber;
   }
 
   /**
@@ -42,7 +41,7 @@ export class DbQueries implements IDbQueries {
    * @param after - The block number to start from. If not provided, all blocks are returned.
    * @returns The blocks after the provided block number or all blocks if no block number is provided.
    */
-  public async getBlocks(after?: number): Promise<IBlockTrace[]> {
+  public async getBlocks(after?: number): Promise<IRawBlock[]> {
     const query = after
       ? 'SELECT * FROM blocks_traces WHERE `blockNumber` > ' + after + ';'
       : 'SELECT * FROM blocks_traces;';
@@ -54,9 +53,11 @@ export class DbQueries implements IDbQueries {
 
     const {rows} = data;
 
-    return (rows?.map((row: unknown) => {
-      const {blockNumber, hash, parentHash} = row as IRawBlock;
-      return {number: blockNumber, hash, parentHash};
-    }) || []) as IBlockTrace[];
+    return (
+      rows?.map((row: unknown) => {
+        const block = row as IRawBlock;
+        return block;
+      }) || []
+    );
   }
 }
