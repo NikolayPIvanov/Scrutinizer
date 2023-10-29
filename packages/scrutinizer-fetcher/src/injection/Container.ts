@@ -9,7 +9,7 @@ import {
 import {infrastructure} from 'scrutinizer-infrastructure';
 import {types} from '../@types';
 import {DbQueries, IDbQueries} from '../ksql';
-import {KafkaTopicMigrator, KsqlMigrator} from '../migrations';
+import {KafkaTopicMigrator} from '../migrations';
 import {IProviderAdapter, ProviderAdapter} from '../provider';
 import {
   ILagCalculatorService,
@@ -52,10 +52,6 @@ export class ContainerInstance extends Container {
 
     this.bind<KafkaTopicMigrator>(types.KafkaTopicMigrator)
       .to(KafkaTopicMigrator)
-      .inSingletonScope();
-
-    this.bind<KsqlMigrator>(types.KsqlMigrator)
-      .to(KsqlMigrator)
       .inSingletonScope();
 
     this.configureDynamicValueServiceRegistrations();

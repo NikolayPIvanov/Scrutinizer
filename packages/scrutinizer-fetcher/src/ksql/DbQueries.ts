@@ -18,7 +18,7 @@ export class DbQueries implements IDbQueries {
    */
   public async getLatestCommittedBlockNumber(): Promise<number> {
     const {data, error} = await this.ksql.client.query(
-      'SELECT * FROM `new_block_numbers`;'
+      'SELECT * FROM `new_blocks_checkpoint`;'
     );
     if (!data) {
       throw error;

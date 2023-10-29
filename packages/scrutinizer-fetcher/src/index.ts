@@ -4,7 +4,7 @@ import 'reflect-metadata';
 
 import {types} from './@types';
 import {ContainerInstance} from './injection';
-import {KafkaTopicMigrator, KsqlMigrator} from './migrations';
+import {KafkaTopicMigrator} from './migrations';
 import {ILagCalculatorService, IValidatorService} from './services';
 
 (async () => {
@@ -12,13 +12,13 @@ import {ILagCalculatorService, IValidatorService} from './services';
 
   await bootstrapInfrastructure(container);
 
-  const ksqlMigrator = container.get<KsqlMigrator>(types.KsqlMigrator);
   const kafkaTopicMigrator = container.get<KafkaTopicMigrator>(
     types.KafkaTopicMigrator
   );
 
-  await kafkaTopicMigrator.migrate();
-  await ksqlMigrator.migrate();
+  if (process.argv.slice(2).indexOf('--reset') > -1) {
+    await kafkaTopicMigrator.migrate();
+  }
 
   container.get<IValidatorService>(types.IValidator);
   container.get<ILagCalculatorService>(types.ILagCalculatorService);
