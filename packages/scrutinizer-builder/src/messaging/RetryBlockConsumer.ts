@@ -2,7 +2,6 @@
 
 import {inject, injectable} from 'inversify';
 import {infrastructure} from 'scrutinizer-infrastructure';
-import {IExtendedKafkaMessage} from 'scrutinizer-infrastructure/build/src/messaging/kafka/consumers/consumers.interface';
 import {types} from '../@types';
 import {IConfiguration} from '../configuration/interfaces';
 import {IProviderAdapter} from '../provider';
@@ -42,7 +41,9 @@ export class RetryBlockConsumer extends infrastructure.messaging.BaseConsumer {
     });
   }
 
-  public handle = async (message: IExtendedKafkaMessage) => {
+  public handle = async (
+    message: infrastructure.messaging.IExtendedKafkaMessage
+  ) => {
     const blockNumber = validate(message);
     const provider = await this.provider.getInstance();
 

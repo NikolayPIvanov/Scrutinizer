@@ -2,11 +2,12 @@
 import {inject, injectable} from 'inversify';
 import {CompressionTypes} from 'kafkajs';
 import {infrastructure} from 'scrutinizer-infrastructure';
-import {to} from 'scrutinizer-infrastructure/build/src/common';
 import {types} from '../../@types';
 import {IConfiguration} from '../../configuration';
 import {IDbQueries, IRawBlock} from '../../ksql';
 import {IValidatorService} from './validator.interfaces';
+
+const to = infrastructure.common.to;
 
 @injectable()
 export class ValidatorService implements IValidatorService {
@@ -17,13 +18,25 @@ export class ValidatorService implements IValidatorService {
     @inject(types.IKafkaClient)
     private kafka: infrastructure.messaging.IKafkaClient,
     @inject(types.IConfiguration) private configuration: IConfiguration,
-    @inject(types.IDbQueries) private dbQueries: IDbQueries
+    @inject(types.IDbQueries) private queries: IDbQueries
   ) {
+    this.initializePeriodicConfirmation();
+  }
+
+  public initializePeriodicConfirmation = async () => {
+    await this.setPreviouslyConfirmedBlockNumber();
+
     setInterval(
       async () => this.validateChainIntegrity(),
       this.configuration.validator.validatorInterval
     );
-  }
+  };
+
+  private setPreviouslyConfirmedBlockNumber = async () => {
+    const previouslyConfirmedBlockNumber =
+      await this.queries.getPreviouslyConfirmedBlockNumber();
+    this.previouslyConfirmedBlockNumber = previouslyConfirmedBlockNumber;
+  };
 
   /**
    * Validates the chain integrity by checking for forks and confirmed blocks.
@@ -32,7 +45,7 @@ export class ValidatorService implements IValidatorService {
    */
   public async validateChainIntegrity(): Promise<void> {
     const [blocks, error] = await to(
-      this.dbQueries.getBlocks(this.previouslyConfirmedBlockNumber)
+      this.queries.getBlocks(this.previouslyConfirmedBlockNumber)
     );
     if (blocks?.length === 0 || error) {
       return;

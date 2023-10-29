@@ -4,7 +4,7 @@ CREATE STREAM `block_numbers` (`blockNumber` int)
   WITH (
     kafka_topic='scrutinizer.block.numbers',
     value_format='json',
-    partitions=10);
+    partitions=3);
 
 CREATE STREAM `latest_block_numbers` AS
   SELECT `blockNumber`, 'latest' AS `tag` FROM `block_numbers` EMIT CHANGES;

@@ -16,7 +16,7 @@ CREATE STREAM blocks_full (
   WITH (
     kafka_topic='scrutinizer.full.blocks',
     value_format='json',
-    partitions=1);
+    partitions=3);
 
 CREATE TABLE blocks_traces AS
   SELECT `blockNumber`,
@@ -27,9 +27,39 @@ CREATE TABLE blocks_traces AS
   GROUP BY `blockNumber`
   EMIT CHANGES;
 
+CREATE STREAM confirmed_blocks (
+  baseFeePerGas varchar,
+  difficulty varchar,
+  extraData varchar,
+  gasLimit varchar,
+  gasUsed varchar,
+  hash varchar,
+  miner varchar,
+  nonce varchar,
+  `blockNumber` int,
+  parentHash varchar,
+  `blockTimestamp` int
+  )
+  WITH (
+    kafka_topic='scrutinizer.confirmed.blocks',
+    value_format='json',
+    partitions=3);
+
+CREATE STREAM `previously_confirmed_block_numbers` AS
+  SELECT `blockNumber`, 'confirmed' AS `tag` FROM confirmed_blocks EMIT CHANGES;
+
+CREATE TABLE `confirmed_block_numbers` AS
+  SELECT `tag`,
+         MAX(`blockNumber`) AS `blockNumber`
+  FROM `previously_confirmed_block_numbers`
+  GROUP BY `tag`
+  EMIT CHANGES;
 
 DROP TABLE blocks_traces;
+DROP TABLE `confirmed_block_numbers`;
 DROP STREAM blocks_full;
+DROP STREAM confirmed_blocks;
+DROP STREAM `previously_confirmed_block_numbers`;
 
 
 

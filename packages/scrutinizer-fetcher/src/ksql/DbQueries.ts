@@ -2,11 +2,7 @@ import {inject, injectable} from 'inversify';
 // eslint-disable-next-line node/no-extraneous-import
 import {infrastructure} from 'scrutinizer-infrastructure';
 import {types} from '../@types';
-import {
-  IDbQueries,
-  ILastCommittedBlockNumber,
-  IRawBlock,
-} from './ksql.interfaces';
+import {IDbQueries, IPreviousBlockNumber, IRawBlock} from './ksql.interfaces';
 
 @injectable()
 export class DbQueries implements IDbQueries {
@@ -33,7 +29,24 @@ export class DbQueries implements IDbQueries {
       return 0;
     }
 
-    return (rows[0] as ILastCommittedBlockNumber).blockNumber;
+    return (rows[0] as IPreviousBlockNumber).blockNumber;
+  }
+
+  public async getPreviouslyConfirmedBlockNumber(): Promise<number> {
+    const {data, error} = await this.ksql.client.query(
+      'SELECT * FROM `confirmed_block_numbers`;'
+    );
+    if (!data) {
+      throw error;
+    }
+
+    const {rows} = data;
+
+    if (!rows?.length) {
+      return 0;
+    }
+
+    return (rows[0] as IPreviousBlockNumber).blockNumber;
   }
 
   /**

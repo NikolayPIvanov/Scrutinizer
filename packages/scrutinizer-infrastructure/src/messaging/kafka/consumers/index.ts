@@ -1,5 +1,15 @@
 import {BaseConsumer} from './BaseConsumer';
 import {CommitManager} from './CommitManager';
-import {ICommitManager, IConsumerInstance} from './consumers.interface';
+import {
+  ICommitManager,
+  IConsumerInstance,
+  IExtendedKafkaMessage,
+} from './consumers.interface';
 
-export {BaseConsumer, CommitManager, ICommitManager, IConsumerInstance};
+export {
+  BaseConsumer,
+  CommitManager,
+  ICommitManager,
+  IConsumerInstance,
+  IExtendedKafkaMessage,
+};

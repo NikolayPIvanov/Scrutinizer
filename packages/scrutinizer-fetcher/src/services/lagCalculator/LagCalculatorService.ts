@@ -1,12 +1,11 @@
 /* eslint-disable node/no-extraneous-import */
 import {inject, injectable} from 'inversify';
 import {CompressionTypes} from 'kafkajs';
-import {ILogger} from 'scrutinizer-infrastructure/build/src/logging';
-import {IKafkaClient} from 'scrutinizer-infrastructure/build/src/messaging';
-import {IProvider} from 'scrutinizer-provider';
+import {infrastructure} from 'scrutinizer-infrastructure';
 import {types} from '../../@types';
 import {IConfiguration} from '../../configuration';
 import {IDbQueries} from '../../ksql';
+import {IProviderAdapter} from '../../provider';
 import {MaxBlocksPerIteration} from './lag.constants';
 import {ILagCalculatorService} from './lag.interfaces';
 
@@ -14,24 +13,23 @@ import {ILagCalculatorService} from './lag.interfaces';
 export class LagCalculatorService implements ILagCalculatorService {
   private previouslyCommittedBlockNumber = 0;
   private isCalculatingLag = false;
-  private provider?: IProvider;
   private readonly blockLagCalculationInterval: number;
 
   constructor(
-    @inject(types.ILogger) private logger: ILogger,
-    @inject(types.IKafkaClient) private kafka: IKafkaClient,
+    @inject(types.ILogger) private logger: infrastructure.logging.ILogger,
+    @inject(types.IKafkaClient)
+    private kafka: infrastructure.messaging.IKafkaClient,
+    @inject(types.IProvider) private provider: IProviderAdapter,
     @inject(types.IConfiguration) private configuration: IConfiguration,
     @inject(types.IDbQueries) private queries: IDbQueries
   ) {
     this.blockLagCalculationInterval =
       this.configuration.network.blockTime *
       this.configuration.network.checkBlockLagIntervalMultiplier;
+    this.initializePeriodicBlockLagCalculation();
   }
 
-  public initializePeriodicBlockLagCalculation = async (
-    provider: IProvider
-  ) => {
-    this.provider = provider;
+  public initializePeriodicBlockLagCalculation = async () => {
     await this.setPreviouslyCommittedBlockNumber();
 
     setInterval(
@@ -68,12 +66,13 @@ export class LagCalculatorService implements ILagCalculatorService {
    * Block lag is the difference between the latest block and the last committed block.
    */
   private async calculateBlockLag() {
-    if (!this.provider) {
+    const provider = await this.provider.getInstance();
+    if (!provider) {
       return;
     }
 
     // Get the block number from the providers.
-    const latest = await this.provider.api.getBlockNumber();
+    const latest = await provider.api.getBlockNumber();
     if (!latest) {
       return;
     }

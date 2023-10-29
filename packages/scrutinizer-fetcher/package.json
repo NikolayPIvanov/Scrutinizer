@@ -45,6 +45,7 @@
     "pm2": "^5.3.0",
     "reflect-metadata": "^0.1.13",
     "scrutinizer-infrastructure": "^1.0.0",
+    "scrutinizer-provider": "^1.0.0",
     "typeorm": "^0.3.17"
   }
 }

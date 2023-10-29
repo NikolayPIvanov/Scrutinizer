@@ -1,5 +1,6 @@
 export interface IDbQueries {
   getLatestCommittedBlockNumber(): Promise<number>;
+  getPreviouslyConfirmedBlockNumber(): Promise<number>;
   getBlocks(after?: number, limit?: number): Promise<IRawBlock[]>;
 }
 
@@ -9,6 +10,6 @@ export interface IRawBlock {
   parentHash: string;
 }
 
-export interface ILastCommittedBlockNumber {
+export interface IPreviousBlockNumber {
   blockNumber: number;
 }

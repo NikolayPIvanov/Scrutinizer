@@ -1,11 +1,12 @@
 /* eslint-disable node/no-extraneous-import */
 import {CompressionTypes} from 'kafkajs';
-import {IKafkaClient} from 'scrutinizer-infrastructure/build/src/messaging';
-import {IExtendedKafkaMessage} from 'scrutinizer-infrastructure/build/src/messaging/kafka/consumers/consumers.interface';
+import {infrastructure} from 'scrutinizer-infrastructure';
 import {IProvider} from 'scrutinizer-provider';
 import {IConfiguration} from '../configuration';
 
-export const validate = (message: IExtendedKafkaMessage) => {
+export const validate = (
+  message: infrastructure.messaging.IExtendedKafkaMessage
+) => {
   const raw = message.value?.toString();
   if (!raw) {
     throw new Error('Message value is empty');
@@ -27,11 +28,11 @@ export const getBlockAndBroadcast = async ({
   kafkaClient,
   configuration,
 }: {
-  message: IExtendedKafkaMessage;
+  message: infrastructure.messaging.IExtendedKafkaMessage;
   blockNumber: number;
   origin: string;
   provider: IProvider;
-  kafkaClient: IKafkaClient;
+  kafkaClient: infrastructure.messaging.IKafkaClient;
   configuration: IConfiguration;
 }) => {
   const lag = +message.highWaterOffset - +message.offset;
