@@ -1,0 +1,14 @@
+# docker exec -it ksqldb-cli ksql http://ksqldb-server:8088
+
+#Init
+docker run -v $PWD/my/migrations/dir:/share/ksql-migrations confluentinc/ksqldb-server:0.29.0 ksql-migrations new-project /share/ksql-migrations http://host.docker.internal:8088
+
+# Metadata
+docker run -v $PWD/migrations/:/share/ksql-migrations confluentinc/ksqldb-server:0.29.0 ksql-migrations --config-file /share/ksql-migrations/ksql-migrations.properties initialize-metadata
+
+# Apply Next
+docker run -v $PWD/migrations/:/share/ksql-migrations confluentinc/ksqldb-server:0.29.0 ksql-migrations --config-file /share/ksql-migrations/ksql-migrations.properties apply --next 
+
+# Info
+docker run -v $PWD/migrations/:/share/ksql-migrations confluentinc/ksqldb-server:0.29.0 ksql-migrations --config-file /share/ksql-migrations/ksql-migrations.properties info 
+

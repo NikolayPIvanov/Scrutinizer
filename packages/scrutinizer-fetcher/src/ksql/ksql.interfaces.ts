@@ -1,6 +1,7 @@
 export interface IDbQueries {
   getLatestCommittedBlockNumber(): Promise<number>;
   getPreviouslyConfirmedBlockNumber(): Promise<number>;
+  execute(statement: string): Promise<void>;
   getBlocks(after?: number, limit?: number): Promise<IRawBlock[]>;
 }
 

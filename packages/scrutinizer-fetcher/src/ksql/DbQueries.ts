@@ -7,7 +7,8 @@ import {IDbQueries, IPreviousBlockNumber, IRawBlock} from './ksql.interfaces';
 @injectable()
 export class DbQueries implements IDbQueries {
   constructor(
-    @inject(types.IKsqlDb) private ksql: infrastructure.ksql.IKsqldb
+    @inject(types.IKsqlDb) private ksql: infrastructure.ksql.IKsqldb,
+    @inject(types.ILogger) private logger: infrastructure.logging.ILogger
   ) {}
 
   /**
@@ -17,7 +18,7 @@ export class DbQueries implements IDbQueries {
    */
   public async getLatestCommittedBlockNumber(): Promise<number> {
     const {data, error} = await this.ksql.client.query(
-      'SELECT * FROM `committed_block_numbers`;'
+      'SELECT * FROM `new_block_numbers`;'
     );
     if (!data) {
       throw error;
@@ -34,7 +35,7 @@ export class DbQueries implements IDbQueries {
 
   public async getPreviouslyConfirmedBlockNumber(): Promise<number> {
     const {data, error} = await this.ksql.client.query(
-      'SELECT * FROM `confirmed_block_numbers`;'
+      'SELECT * FROM `confirmed_blocks_checkpoint`;'
     );
     if (!data) {
       throw error;
@@ -56,8 +57,8 @@ export class DbQueries implements IDbQueries {
    */
   public async getBlocks(after?: number, limit = 10000): Promise<IRawBlock[]> {
     const query = after
-      ? 'SELECT * FROM blocks_traces WHERE `blockNumber` > ' + after
-      : 'SELECT * FROM blocks_traces';
+      ? 'SELECT * FROM `processed_blocks` WHERE `blockNumber` > ' + after
+      : 'SELECT * FROM `processed_blocks`';
     const limitQuery = `${query} LIMIT ${limit};`;
 
     const {data, error} = await this.ksql.client.query(limitQuery);
@@ -66,5 +67,15 @@ export class DbQueries implements IDbQueries {
     }
 
     return data.rows?.map((row: unknown) => row as IRawBlock) || [];
+  }
+
+  public async execute(statement: string): Promise<void> {
+    try {
+      const response = await this.ksql.client.executeStatement(statement);
+
+      this.logger.info(JSON.stringify(response.error?.message, null, 2));
+    } catch (error) {
+      this.logger.error(error);
+    }
   }
 }

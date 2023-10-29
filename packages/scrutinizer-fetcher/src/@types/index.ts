@@ -8,4 +8,6 @@ export const types = {
   IKsqlDb: Symbol('IKsqlDb'),
   IDbQueries: Symbol('IDbQueries'),
   ILagCalculatorService: Symbol('ILagCalculatorService'),
+  KafkaTopicMigrator: Symbol('KafkaTopicMigrator'),
+  KsqlMigrator: Symbol('KsqlMigrator'),
 };

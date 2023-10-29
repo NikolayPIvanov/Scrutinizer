@@ -10,7 +10,7 @@ import {
 @injectable()
 export class KafkaClient implements IKafkaClient {
   private readonly kafka: Kafka;
-  private readonly admin: Admin;
+  public readonly admin: Admin;
   public readonly producer: Producer;
 
   constructor(configuration: IKafkaConfiguration) {
