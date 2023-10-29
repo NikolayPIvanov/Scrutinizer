@@ -1,4 +1,3 @@
-/* eslint-disable node/no-extraneous-import */
 import {inject, injectable} from 'inversify';
 import {infrastructure} from 'scrutinizer-infrastructure';
 import {IExtendedKafkaMessage} from 'scrutinizer-infrastructure/build/src/messaging/kafka/consumers/consumers.interface';
@@ -57,6 +56,6 @@ export class NextBlockConsumer extends infrastructure.messaging.BaseConsumer {
   };
 
   private handleError = (error: unknown) => {
-    this.logger.error(error, 'handleError');
+    this.logger.error(error);
   };
 }

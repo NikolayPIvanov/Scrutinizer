@@ -1,4 +1,3 @@
-/* eslint-disable node/no-extraneous-import */
 import {CompressionTypes} from 'kafkajs';
 import {infrastructure} from 'scrutinizer-infrastructure';
 import {IProvider} from 'scrutinizer-provider';

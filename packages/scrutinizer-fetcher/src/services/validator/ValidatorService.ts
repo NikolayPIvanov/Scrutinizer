@@ -72,7 +72,7 @@ export class ValidatorService implements IValidatorService {
    */
   private findForks(blocks: IRawBlock[]) {
     const forks = [];
-    let consecutiveBlocksAtStart = 0;
+    let consecutiveBlocksAtStart = 1;
 
     for (let i = blocks.length - 1; i > 0; i--) {
       const currentBlock = blocks[i];

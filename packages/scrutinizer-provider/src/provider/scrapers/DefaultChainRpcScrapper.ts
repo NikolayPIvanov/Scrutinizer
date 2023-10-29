@@ -1,4 +1,3 @@
-/* eslint-disable node/no-extraneous-import */
 import axios, {AxiosInstance} from 'axios';
 import {ILoggerLike, to} from '../../common';
 import {

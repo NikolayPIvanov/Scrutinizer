@@ -1,5 +1,3 @@
-/* eslint-disable node/no-extraneous-import */
-
 import {inject, injectable} from 'inversify';
 import {infrastructure} from 'scrutinizer-infrastructure';
 import {types} from '../@types';
@@ -58,6 +56,6 @@ export class RetryBlockConsumer extends infrastructure.messaging.BaseConsumer {
   };
 
   private handleError = (error: unknown) => {
-    this.logger.error(error, 'handleError');
+    this.logger.error(error);
   };
 }

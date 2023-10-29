@@ -1,4 +1,3 @@
-/* eslint-disable node/no-extraneous-import */
 import {infrastructure} from 'scrutinizer-infrastructure';
 
 import 'reflect-metadata';

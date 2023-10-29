@@ -1,4 +1,3 @@
-/* eslint-disable node/no-extraneous-import */
 import {inject, injectable} from 'inversify';
 import {CompressionTypes} from 'kafkajs';
 import {infrastructure} from 'scrutinizer-infrastructure';

@@ -1,4 +1,3 @@
-/* eslint-disable node/no-extraneous-import */
 import axios, {AxiosInstance} from 'axios';
 import {
   DEFI_LLAMA_GITHUB_BASE_URL,
